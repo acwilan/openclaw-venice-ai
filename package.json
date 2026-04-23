@@ -5,7 +5,11 @@
   "type": "module",
   "main": "dist/index.js",
   "openclaw": {
-    "extensions": ["./dist/index.js"]
+    "extensions": ["./dist/index.js"],
+    "compat": {
+      "pluginApi": ">=2026.4.0",
+      "minGatewayVersion": "2026.4.0"
+    }
   },
   "scripts": {
     "build": "tsc",
