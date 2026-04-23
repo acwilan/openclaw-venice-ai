@@ -53,4 +53,4 @@ jobs:
           CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
 
       - name: Publish to ClawHub
-        run: clawhub package publish "$(pwd)" --family code-plugin --source-repo acwilan/openclaw-venice-ai --source-commit $(git rev-parse HEAD) --name openclaw-venice-ai --version $(node -p "require('./package.json').version")
+        run: clawhub package publish "$(pwd)" --family code-plugin --source-repo acwilan/openclaw-venice-media --source-commit $(git rev-parse HEAD) --name openclaw-venice-media --version $(node -p "require('./package.json').version")

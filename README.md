@@ -1,25 +1,26 @@
-# OpenClaw Venice.ai Image Generation Plugin
+# OpenClaw Venice.ai Media Plugin
 
-Image generation for OpenClaw using [Venice.ai](https://venice.ai) API.
+Image and video generation for OpenClaw using [Venice.ai](https://venice.ai) API.
 
 ## Features
 
-- 🎨 **30+ image generation models** via Venice.ai API
-- 🔐 **Uses bundled Venice auth** — no separate API key needed if you already use Venice text models
-- 📐 **Multiple sizes** — 1024x1024, 1024x1536, 1536x1024, 832x1216, 1216x832, 512x512, 512x768, 768x512
-- 🎯 **Popular models** — flux-2-max, venice-sd35, gpt-image-2, recraft-v4-pro, and more
+- 🎨 **80+ image models** — flux-2-max, venice-sd35, gpt-image-2, recraft-v4-pro, and more
+- 🎬 **80+ video models** — LTX, WAN, Kling, Veo, Sora, Runway Gen-4, and more
+- 🔐 **Uses bundled Venice auth** — no separate API key needed
+- 📐 **Multiple sizes** — various aspect ratios for images and video
+- ⏱️ **Video duration & FPS control**
 
 ## Prerequisites
 
 - **Venice.ai API key** — get one at https://venice.ai/settings/api
-- The plugin uses the **bundled Venice provider** for authentication, so if you already have Venice text models configured, no additional setup is needed
+- The plugin uses the **bundled Venice provider** for authentication
 
 ## Installation
 
 ### From ClawHub (recommended):
 
 ```bash
-openclaw plugins install openclaw-venice-ai
+openclaw plugins install openclaw-venice-media
 ```
 
 ### From source:
@@ -34,15 +35,11 @@ openclaw plugins install "$(pwd)"
 
 ## Authentication
 
-This plugin uses the **bundled Venice provider** for authentication. If you already have Venice text models set up, you're good to go!
-
-If not, set up your Venice API key:
+This plugin uses the **bundled Venice provider** for authentication:
 
 ```bash
 openclaw models auth setup-token --provider venice
 ```
-
-Enter your Venice.ai API key when prompted.
 
 ## Configuration
 
@@ -52,12 +49,15 @@ Add to your `~/.openclaw/openclaw.json`:
 {
   "plugins": {
     "entries": {
-      "venice-image": {
+      "venice-media": {
         "enabled": true,
         "config": {
-          "defaultModel": "flux-2-max",
-          "defaultSteps": 40,
-          "defaultCfgScale": 8.0,
+          "defaultImageModel": "flux-2-max",
+          "defaultVideoModel": "ltx-2-fast-text-to-video",
+          "defaultImageSteps": 40,
+          "defaultImageCfgScale": 8.0,
+          "defaultVideoDuration": 5,
+          "defaultVideoFps": 24,
           "hideWatermark": true,
           "safeMode": false,
           "outputDir": "~/Downloads/venice-ai-output"
@@ -68,7 +68,10 @@ Add to your `~/.openclaw/openclaw.json`:
   "agents": {
     "defaults": {
       "imageGenerationModel": {
-        "primary": "venice-image/flux-2-max"
+        "primary": "venice-media/flux-2-max"
+      },
+      "videoGenerationModel": {
+        "primary": "venice-media/ltx-2-fast-text-to-video"
       }
     }
   }
@@ -79,28 +82,39 @@ Add to your `~/.openclaw/openclaw.json`:
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `defaultModel` | string | `venice-sd35` | Default model to use |
-| `defaultSteps` | number | `30` | Inference steps (higher = better quality) |
-| `defaultCfgScale` | number | `7.0` | Guidance scale (higher = more prompt adherence) |
+| `defaultImageModel` | string | `flux-2-max` | Default image model |
+| `defaultVideoModel` | string | `ltx-2-fast-text-to-video` | Default video model |
+| `defaultImageSteps` | number | `30` | Image inference steps |
+| `defaultImageCfgScale` | number | `7.0` | Image guidance scale |
+| `defaultVideoDuration` | number | `5` | Video duration (seconds) |
+| `defaultVideoFps` | number | `24` | Video frame rate |
 | `hideWatermark` | boolean | `false` | Hide Venice.ai watermark |
 | `safeMode` | boolean | `false` | Enable content filtering |
-| `outputDir` | string | `~/Downloads/venice-ai-output` | Where to save images |
 
 ## Usage
 
-Once installed and configured, OpenClaw can generate images:
+### Image Generation
 
 ```
 Generate an image of a sunset over mountains
 ```
 
-Or specify a different model:
+### Video Generation
 
 ```
-Generate an image with venice-image/recraft-v4-pro of a cyberpunk city
+Generate a video of waves crashing on a beach
+```
+
+Or specify models:
+
+```
+Generate an image with venice-media/recraft-v4-pro of a cyberpunk city
+Generate a video with venice-media/kling-2.6-pro-text-to-video of a rocket launch
 ```
 
 ## Available Models
+
+### Image Models (30+)
 
 | Model | Description |
 |-------|-------------|
@@ -111,6 +125,20 @@ Generate an image with venice-image/recraft-v4-pro of a cyberpunk city
 | `recraft-v4-pro` | Recraft v4 Pro |
 | `lustify-v8` | Lustify v8 |
 | ... and 25+ more |
+
+### Video Models (80+)
+
+| Model | Description |
+|-------|-------------|
+| `ltx-2-fast-text-to-video` | LTX 2 Fast |
+| `ltx-2-full-text-to-video` | LTX 2 Full |
+| `wan-2-7-text-to-video` | WAN 2.7 |
+| `seedance-2-0-text-to-video` | Seedance 2.0 |
+| `kling-2.6-pro-text-to-video` | Kling 2.6 Pro |
+| `veo3-fast-text-to-video` | Veo 3 Fast |
+| `sora-2-text-to-video` | Sora 2 |
+| `runway-gen4-turbo` | Runway Gen-4 Turbo |
+| ... and 70+ more |
 
 See Venice.ai docs for full list: https://venice.ai/docs
 

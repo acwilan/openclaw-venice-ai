@@ -1,7 +1,7 @@
 {
-  "name": "openclaw-venice-ai",
-  "version": "1.0.0",
-  "description": "Venice.ai image generation for OpenClaw",
+  "name": "openclaw-venice-media",
+  "version": "2.0.0",
+  "description": "Venice.ai image and video generation for OpenClaw",
   "type": "module",
   "main": "dist/index.js",
   "openclaw": {

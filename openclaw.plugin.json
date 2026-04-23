@@ -1,8 +1,8 @@
 {
-  "id": "venice-image",
-  "name": "Venice.ai Image Generation",
-  "description": "Image generation using Venice.ai API",
-  "version": "1.0.0",
+  "id": "venice-media",
+  "name": "Venice.ai Media Generation",
+  "description": "Image and video generation using Venice.ai API",
+  "version": "2.0.0",
   "author": "Andres Rovira",
   "authorUrl": "https://github.com/acwilan",
   "license": "MIT",
@@ -10,10 +10,12 @@
   "runtime": "node",
   "entry": "index",
   "capabilities": [
-    "image-generation"
+    "image-generation",
+    "video-generation"
   ],
   "requires": [
-    "image-generation-core"
+    "image-generation-core",
+    "video-generation-core"
   ],
   "configSchema": {
     "type": "object",
@@ -25,27 +27,46 @@
       },
       "outputDir": {
         "type": "string",
-        "description": "Directory for saving generated images",
+        "description": "Directory for saving generated media",
         "default": "~/Downloads/venice-ai-output"
       },
-      "defaultModel": {
+      "defaultImageModel": {
         "type": "string",
-        "description": "Default model to use",
-        "default": "venice-sd35"
+        "description": "Default image model to use",
+        "default": "flux-2-max"
       },
-      "defaultSteps": {
+      "defaultVideoModel": {
+        "type": "string",
+        "description": "Default video model to use",
+        "default": "ltx-2-fast-text-to-video"
+      },
+      "defaultImageSteps": {
         "type": "number",
-        "description": "Number of inference steps (higher = better quality, slower)",
+        "description": "Number of inference steps for images (higher = better quality, slower)",
         "default": 30,
         "minimum": 1,
         "maximum": 50
       },
-      "defaultCfgScale": {
+      "defaultImageCfgScale": {
         "type": "number",
-        "description": "Guidance scale (higher = more adherence to prompt)",
+        "description": "Guidance scale for images (higher = more adherence to prompt)",
         "default": 7.0,
         "minimum": 1.0,
         "maximum": 20.0
+      },
+      "defaultVideoDuration": {
+        "type": "number",
+        "description": "Default video duration in seconds",
+        "default": 5,
+        "minimum": 1,
+        "maximum": 60
+      },
+      "defaultVideoFps": {
+        "type": "number",
+        "description": "Default video FPS",
+        "default": 24,
+        "minimum": 1,
+        "maximum": 60
       },
       "hideWatermark": {
         "type": "boolean",
