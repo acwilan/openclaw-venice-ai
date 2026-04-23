@@ -54,7 +54,7 @@ Add to your `~/.openclaw/openclaw.json`:
       "venice-media": {
         "enabled": true,
         "config": {
-          "defaultImageModel": "lustify-v8",
+          "defaultImageModel": "flux-2-max",
           "defaultVideoModel": "ltx-2-fast-text-to-video",
           "defaultImageSteps": 30,
           "defaultImageCfgScale": 7.0,
