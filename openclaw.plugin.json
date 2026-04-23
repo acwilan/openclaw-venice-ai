@@ -1,0 +1,62 @@
+{
+  "id": "venice-image",
+  "name": "Venice.ai Image Generation",
+  "description": "Image generation using Venice.ai API",
+  "version": "1.0.0",
+  "author": "Andres Rovira",
+  "authorUrl": "https://github.com/acwilan",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "runtime": "node",
+  "entry": "index",
+  "capabilities": [
+    "image-generation"
+  ],
+  "requires": [
+    "image-generation-core"
+  ],
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "baseUrl": {
+        "type": "string",
+        "description": "Venice.ai API base URL",
+        "default": "https://api.venice.ai/api/v1"
+      },
+      "outputDir": {
+        "type": "string",
+        "description": "Directory for saving generated images",
+        "default": "~/Downloads/venice-ai-output"
+      },
+      "defaultModel": {
+        "type": "string",
+        "description": "Default model to use",
+        "default": "venice-sd35"
+      },
+      "defaultSteps": {
+        "type": "number",
+        "description": "Number of inference steps (higher = better quality, slower)",
+        "default": 30,
+        "minimum": 1,
+        "maximum": 50
+      },
+      "defaultCfgScale": {
+        "type": "number",
+        "description": "Guidance scale (higher = more adherence to prompt)",
+        "default": 7.0,
+        "minimum": 1.0,
+        "maximum": 20.0
+      },
+      "hideWatermark": {
+        "type": "boolean",
+        "description": "Hide Venice.ai watermark on generated images",
+        "default": false
+      },
+      "safeMode": {
+        "type": "boolean",
+        "description": "Enable content filtering/safe mode",
+        "default": false
+      }
+    }
+  }
+}
