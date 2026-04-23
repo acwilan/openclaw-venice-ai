@@ -323,9 +323,22 @@ export default definePluginEntry({
         }
 
         // Venice durations must be specific values - round to nearest valid
-        // Use 6s minimum (works for LTX: 6/8/10/12/14/16/18/20 and longcat: 6/8/10/12/14/16/18/20)
+        // Different models support different durations
         const requestedDuration = durationSeconds || config.defaultVideoDuration || 6;
-        const validDurations = [6, 8, 10, 12, 14, 15, 16, 18, 20, 30];
+        
+        // Model-specific duration support
+        let validDurations: number[];
+        if (modelToUse.includes('wan-2.5')) {
+          // WAN 2.5 only supports 5s and 10s
+          validDurations = [5, 10];
+        } else if (modelToUse.includes('wan-2.7') || modelToUse.includes('wan-2.6')) {
+          // WAN 2.7/2.6 support 5s, 10s, 15s
+          validDurations = [5, 10, 15];
+        } else {
+          // LTX and others support wider range (6s minimum)
+          validDurations = [6, 8, 10, 12, 14, 15, 16, 18, 20, 30];
+        }
+        
         const videoDuration = validDurations.reduce((prev, curr) => 
           Math.abs(curr - requestedDuration) < Math.abs(prev - requestedDuration) ? curr : prev
         );
