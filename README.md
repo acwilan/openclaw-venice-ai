@@ -105,6 +105,11 @@ Generate an image of a sunset over mountains
 Generate a video of waves crashing on a beach
 ```
 
+**Note on video size:** Venice.ai videos can be large. For Telegram (5MB limit), use:
+- Lower resolution (480P) with `resolution` parameter
+- Shorter durations (6s is minimum, works for most models)
+- Example: `Generate a 480P video of ...`
+
 Or specify models:
 
 ```

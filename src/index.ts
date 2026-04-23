@@ -13,11 +13,13 @@ import { homedir } from "node:os";
 import type {
   ImageGenerationRequest,
   ImageGenerationResult,
-  VideoGenerationRequest,
-  VideoGenerationResult,
   OpenClawConfig,
   OpenClawPluginApi,
 } from "openclaw/plugin-sdk";
+import type {
+  VideoGenerationRequest,
+  VideoGenerationResult,
+} from "openclaw/plugin-sdk/video-generation";
 
 const PROVIDER_ID = "venice-media";
 const PROVIDER_NAME = "Venice.ai Media Generation";
@@ -39,7 +41,7 @@ const VENICE_SUPPORTED_SIZES = [
   "768x512",
 ] as const;
 
-// Video supported sizes (aspect ratios)
+// Video supported sizes
 const VENICE_VIDEO_SIZES = [
   "1024x576",  // 16:9
   "576x1024",  // 9:16
@@ -63,42 +65,17 @@ const VENICE_IMAGE_MODELS = [
 // Venice.ai video models
 const DEFAULT_VIDEO_MODEL = "ltx-2-fast-text-to-video";
 const VENICE_VIDEO_MODELS = [
-  // LTX models
   "ltx-2-fast-text-to-video", "ltx-2-fast-image-to-video",
   "ltx-2-full-text-to-video", "ltx-2-full-image-to-video",
-  "ltx-2-v2-3-fast-text-to-video", "ltx-2-v2-3-fast-image-to-video",
-  "ltx-2-v2-3-full-text-to-video", "ltx-2-v2-3-full-image-to-video",
-  "ltx-2-19b-full-text-to-video", "ltx-2-19b-full-image-to-video",
-  "ltx-2-19b-distilled-text-to-video", "ltx-2-19b-distilled-image-to-video",
-  // WAN models
-  "wan-2-7-text-to-video", "wan-2-7-image-to-video", "wan-2-7-reference-to-video", "wan-2-7-video-to-video",
-  "wan-2.6-text-to-video", "wan-2.6-image-to-video",
-  "wan-2.6-flash-image-to-video",
-  // Seedance models
-  "seedance-1-5-pro-text-to-video", "seedance-1-5-pro-image-to-video",
-  "seedance-2-0-text-to-video", "seedance-2-0-image-to-video", "seedance-2-0-reference-to-video",
-  "seedance-2-0-fast-text-to-video", "seedance-2-0-fast-image-to-video",
-  // Kling models
+  "longcat-distilled-text-to-video", "longcat-distilled-image-to-video",
+  "wan-2-7-text-to-video", "wan-2-7-image-to-video",
+  "seedance-2-0-text-to-video", "seedance-2-0-image-to-video",
   "kling-2.6-pro-text-to-video", "kling-2.6-pro-image-to-video",
-  "kling-2.5-turbo-pro-text-to-video", "kling-2.5-turbo-pro-image-to-video",
-  "kling-o3-pro-text-to-video", "kling-o3-pro-image-to-video",
-  "kling-v3-pro-text-to-video", "kling-v3-pro-image-to-video",
-  // Veo models
   "veo3-fast-text-to-video", "veo3-fast-image-to-video",
-  "veo3-full-text-to-video", "veo3-full-image-to-video",
-  "veo3.1-fast-text-to-video", "veo3.1-fast-image-to-video",
-  // Sora models
   "sora-2-text-to-video", "sora-2-image-to-video",
-  "sora-2-pro-text-to-video", "sora-2-pro-image-to-video",
-  // Runway
-  "runway-gen4-5", "runway-gen4-5-text", "runway-gen4-turbo", "runway-gen4-aleph",
-  // Others
+  "runway-gen4-turbo", "runway-gen4-5-text",
   "grok-imagine-text-to-video", "grok-imagine-image-to-video",
   "pixverse-v5.6-text-to-video", "pixverse-v5.6-image-to-video",
-  "vidu-q3-text-to-video", "vidu-q3-image-to-video",
-  "longcat-text-to-video", "longcat-image-to-video",
-  "ovi-image-to-video",
-  "topaz-video-upscale",
 ] as const;
 
 interface VeniceConfig extends OpenClawConfig {
@@ -110,7 +87,6 @@ interface VeniceConfig extends OpenClawConfig {
   defaultImageSteps?: number;
   defaultImageCfgScale?: number;
   defaultVideoDuration?: number;
-  defaultVideoFps?: number;
   hideWatermark?: boolean;
   safeMode?: boolean;
 }
@@ -275,28 +251,42 @@ export default definePluginEntry({
 
       capabilities: {
         generate: {
-          maxCount: 1,
-          supportsSize: true,
-          supportsAspectRatio: false,
-          supportsResolution: false,
-          supportsDuration: true,
-          supportsFps: true,
-        },
-        edit: {
-          enabled: false,
-          maxCount: 0,
+          maxVideos: 1,
+          maxInputImages: 1,
           maxInputVideos: 0,
-          supportsSize: false,
-          supportsAspectRatio: false,
+          maxDurationSeconds: 60,
+          supportedDurationSeconds: [5, 10, 15, 30, 60],
+          sizes: [...VENICE_VIDEO_SIZES],
+          aspectRatios: ["16:9", "9:16", "1:1"],
+          supportsSize: true,
+          supportsAspectRatio: true,
+          supportsResolution: false,
+          supportsAudio: false,
+          supportsWatermark: true,
+        },
+        imageToVideo: {
+          enabled: true,
+          maxVideos: 1,
+          maxInputImages: 1,
+          maxInputVideos: 0,
+          maxDurationSeconds: 60,
+          supportedDurationSeconds: [5, 10, 15, 30, 60],
+          sizes: [...VENICE_VIDEO_SIZES],
+          aspectRatios: ["16:9", "9:16", "1:1"],
+          supportsSize: true,
+          supportsAspectRatio: true,
           supportsResolution: false,
         },
-        geometry: {
-          sizes: [...VENICE_VIDEO_SIZES],
+        videoToVideo: {
+          enabled: false,
+          maxVideos: 0,
+          maxInputImages: 0,
+          maxInputVideos: 0,
         },
       },
 
       async generateVideo(req: VideoGenerationRequest): Promise<VideoGenerationResult> {
-        const { prompt, model, size, duration, fps, agentDir, authStore } = req;
+        const { prompt, model, size, durationSeconds, agentDir, authStore, inputImages, aspectRatio } = req;
 
         const auth = await resolveApiKeyForProvider({
           provider: "venice",
@@ -316,35 +306,53 @@ export default definePluginEntry({
         const baseUrl = config.baseUrl ?? VENICE_API_BASE_URL;
         const modelToUse = model || config.defaultVideoModel || DEFAULT_VIDEO_MODEL;
 
-        let width = 1024;
-        let height = 576;
-        if (size) {
+        // Determine aspect ratio from size or use provided aspectRatio
+        let aspectRatioToUse = "16:9";
+        if (aspectRatio) {
+          aspectRatioToUse = aspectRatio;
+        } else if (size) {
           const [w, h] = size.split("x").map(Number);
           if (w && h) {
-            width = w;
-            height = h;
+            const ratio = w / h;
+            if (Math.abs(ratio - 16/9) < 0.1) aspectRatioToUse = "16:9";
+            else if (Math.abs(ratio - 9/16) < 0.1) aspectRatioToUse = "9:16";
+            else if (Math.abs(ratio - 1) < 0.1) aspectRatioToUse = "1:1";
+            else if (Math.abs(ratio - 4/3) < 0.1) aspectRatioToUse = "4:3";
+            else if (Math.abs(ratio - 3/4) < 0.1) aspectRatioToUse = "3:4";
           }
         }
 
-        const videoDuration = duration || config.defaultVideoDuration || 5;
-        const videoFps = fps || config.defaultVideoFps || 24;
+        // Venice durations must be specific values - round to nearest valid
+        // Use 6s minimum (works for LTX: 6/8/10/12/14/16/18/20 and longcat: 6/8/10/12/14/16/18/20)
+        const requestedDuration = durationSeconds || config.defaultVideoDuration || 6;
+        const validDurations = [6, 8, 10, 12, 14, 15, 16, 18, 20, 30];
+        const videoDuration = validDurations.reduce((prev, curr) => 
+          Math.abs(curr - requestedDuration) < Math.abs(prev - requestedDuration) ? curr : prev
+        );
+        const durationStr = `${videoDuration}s`;
 
         await mkdir(outputDir, { recursive: true });
 
-        // Start video generation
-        const requestBody = {
+        // Build request body for /video/queue
+        const requestBody: Record<string, unknown> = {
           model: modelToUse,
           prompt: prompt,
-          width: width,
-          height: height,
-          duration: videoDuration,
-          fps: videoFps,
-          seed: Math.floor(Math.random() * 999999999),
-          hide_watermark: config.hideWatermark ?? false,
-          safe_mode: config.safeMode ?? false,
+          aspect_ratio: aspectRatioToUse,
+          duration: durationStr,
         };
 
-        const response = await fetch(`${baseUrl}/video/generate`, {
+        // Handle image-to-video if reference images provided
+        if (inputImages && inputImages.length > 0) {
+          const firstImage = inputImages[0];
+          if (firstImage.url) {
+            requestBody.image_url = firstImage.url;
+          } else if (firstImage.buffer) {
+            requestBody.image = firstImage.buffer.toString('base64');
+          }
+        }
+
+        // Queue the video generation
+        const queueResponse = await fetch(`${baseUrl}/video/queue`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -353,56 +361,125 @@ export default definePluginEntry({
           body: JSON.stringify(requestBody),
         });
 
-        if (!response.ok) {
-          const errorText = await response.text();
+        if (!queueResponse.ok) {
+          const errorText = await queueResponse.text();
           throw new Error(
-            `Venice.ai API error: ${response.status} ${response.statusText} - ${errorText}`
+            `Venice.ai video queue error: ${queueResponse.status} ${queueResponse.statusText} - ${errorText}`
           );
         }
 
-        const data = await response.json() as Record<string, unknown>;
-        const jobId = data.id as string;
+        const queueData = await queueResponse.json() as Record<string, unknown>;
+        const queueId = queueData.queue_id as string;
 
-        if (!jobId) {
-          throw new Error("No job ID returned from Venice.ai API");
+        if (!queueId) {
+          throw new Error("No queue ID returned from Venice.ai API");
         }
 
-        // Poll for completion
-        const maxAttempts = 60; // 5 minutes at 5 second intervals
+        // Poll for completion using /video/retrieve
+        const maxAttempts = 120;
         const pollInterval = 5000;
 
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
           await new Promise(resolve => setTimeout(resolve, pollInterval));
 
-          const statusResponse = await fetch(`${baseUrl}/video/status/${jobId}`, {
+          const retrieveResponse = await fetch(`${baseUrl}/video/retrieve`, {
+            method: "POST",
             headers: {
+              "Content-Type": "application/json",
               Authorization: `Bearer ${apiKey}`,
             },
+            body: JSON.stringify({ 
+              queue_id: queueId,
+              model: modelToUse,
+            }),
           });
 
-          if (!statusResponse.ok) {
+          if (!retrieveResponse.ok) {
             continue;
           }
 
-          const statusData = await statusResponse.json() as Record<string, unknown>;
+          // Check if response is binary video data (completed) or JSON status
+          const contentType = retrieveResponse.headers.get("content-type") || "";
+          
+          if (contentType.includes("video/") || contentType.includes("application/octet-stream")) {
+            // Video is ready - response is the binary video file
+            const videoBuffer = Buffer.from(await retrieveResponse.arrayBuffer());
+            const timestamp = Date.now();
+            
+            // Call /video/complete to delete stored media
+            try {
+              await fetch(`${baseUrl}/video/complete`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({ 
+                  queue_id: queueId,
+                  model: modelToUse,
+                }),
+              });
+            } catch {}
+            
+            return {
+              videos: [{
+                buffer: videoBuffer,
+                mimeType: DEFAULT_VIDEO_MIME,
+                fileName: `venice-video-${timestamp}.mp4`,
+              }],
+              model: modelToUse,
+              metadata: { aspect_ratio: aspectRatioToUse, duration: videoDuration },
+            };
+          }
+
+          // Response is JSON status
+          const statusData = await retrieveResponse.json() as Record<string, unknown>;
           const status = statusData.status as string;
 
           if (status === "completed") {
+            const videoUrl = statusData.video_url as string;
             const videoData = statusData.video as string;
+            
+            let videoBuffer: Buffer;
+            
             if (videoData) {
-              const buffer = Buffer.from(videoData, "base64");
-              const timestamp = Date.now();
-              return {
-                videos: [{
-                  buffer,
-                  mimeType: DEFAULT_VIDEO_MIME,
-                  fileName: `venice-video-${timestamp}.mp4`,
-                }],
-                model: modelToUse,
-                metadata: { width, height, duration: videoDuration, fps: videoFps },
-              };
+              videoBuffer = Buffer.from(videoData, "base64");
+            } else if (videoUrl) {
+              const videoResponse = await fetch(videoUrl);
+              if (!videoResponse.ok) {
+                throw new Error(`Failed to download video: ${videoResponse.status}`);
+              }
+              videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
+            } else {
+              throw new Error("Video completed but no data returned");
             }
-            throw new Error("Video completed but no data returned");
+            
+            const timestamp = Date.now();
+            
+            // Call /video/complete to delete stored media
+            try {
+              await fetch(`${baseUrl}/video/complete`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({ 
+                  queue_id: queueId,
+                  model: modelToUse,
+                }),
+              });
+            } catch {}
+            
+            return {
+              videos: [{
+                buffer: videoBuffer,
+                mimeType: DEFAULT_VIDEO_MIME,
+                fileName: `venice-video-${timestamp}.mp4`,
+              }],
+              model: modelToUse,
+              metadata: { aspect_ratio: aspectRatioToUse, duration: videoDuration },
+            };
           }
 
           if (status === "failed") {
