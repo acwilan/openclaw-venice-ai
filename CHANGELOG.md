@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.1] - 2026-04-24
+
+### Changed
+- Updated documentation (README.md, SKILL.md) with v2.1.0 features
+- Added detailed usage examples
+- Added model-specific duration tables
+- Documented image editing capabilities (pending OpenClaw support)
+
 ## [2.1.0] - 2026-04-24
 
 ### Added
