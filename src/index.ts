@@ -89,6 +89,10 @@ interface VeniceConfig extends OpenClawConfig {
   defaultVideoDuration?: number;
   hideWatermark?: boolean;
   safeMode?: boolean;
+  // New image generation options
+  defaultNegativePrompt?: string;
+  defaultStylePreset?: string;
+  defaultOutputFormat?: "webp" | "png" | "jpeg";
 }
 
 export default definePluginEntry({
@@ -120,8 +124,8 @@ export default definePluginEntry({
         generate: {
           maxCount: 4,
           supportsSize: true,
-          supportsAspectRatio: false,
-          supportsResolution: false,
+          supportsAspectRatio: true,
+          supportsResolution: true,
         },
         edit: {
           enabled: false,
@@ -137,7 +141,23 @@ export default definePluginEntry({
       },
 
       async generateImage(req: ImageGenerationRequest): Promise<ImageGenerationResult> {
-        const { prompt, model, size, count = 1, cfg, agentDir, authStore } = req;
+        const { 
+          prompt, 
+          model, 
+          size, 
+          aspectRatio,
+          resolution,
+          count = 1, 
+          cfg, 
+          agentDir, 
+          authStore,
+        } = req;
+        
+        // Access additional params from config
+        const pluginConfig = req.cfg?.plugins?.entries?.["venice-media"]?.config as VeniceConfig | undefined;
+        const negativePrompt = pluginConfig?.defaultNegativePrompt;
+        const stylePreset = pluginConfig?.defaultStylePreset;
+        const outputFormat = pluginConfig?.defaultOutputFormat || "webp";
 
         const auth = await resolveApiKeyForProvider({
           provider: "venice",
@@ -157,34 +177,54 @@ export default definePluginEntry({
         const baseUrl = config.baseUrl ?? VENICE_API_BASE_URL;
         const modelToUse = model || config.defaultImageModel || DEFAULT_IMAGE_MODEL;
 
-        let width = 1024;
-        let height = 1024;
-        if (size) {
-          const [w, h] = size.split("x").map(Number);
-          if (w && h) {
-            width = w;
-            height = h;
-          }
-        }
-
         await mkdir(outputDir, { recursive: true });
 
         const images: Array<{ buffer: Buffer; mimeType: string; fileName: string }> = [];
 
         for (let i = 0; i < count; i++) {
-          const requestBody = {
+          // Build request body with new features
+          const requestBody: Record<string, unknown> = {
             model: modelToUse,
             prompt: prompt,
-            width: width,
-            height: height,
             seed: Math.floor(Math.random() * 999999999),
             cfg_scale: typeof cfg === 'number' ? cfg : (config.defaultImageCfgScale ?? 7.0),
             steps: config.defaultImageSteps ?? 30,
-            format: "png" as const,
+            format: outputFormat === "jpeg" ? "jpg" : outputFormat,
             embed_exif_metadata: false,
             hide_watermark: config.hideWatermark ?? false,
             safe_mode: config.safeMode ?? false,
+            return_binary: true, // Use binary for efficiency
           };
+
+          // Sizing: aspect_ratio + resolution OR width + height
+          if (aspectRatio) {
+            // Models like Nano Banana use aspect_ratio + resolution
+            requestBody.aspect_ratio = aspectRatio;
+            if (resolution) {
+              requestBody.resolution = resolution;
+            }
+          } else if (size) {
+            // Traditional width/height
+            const [w, h] = size.split("x").map(Number);
+            if (w && h) {
+              requestBody.width = w;
+              requestBody.height = h;
+            } else {
+              requestBody.width = 1024;
+              requestBody.height = 1024;
+            }
+          } else {
+            requestBody.width = 1024;
+            requestBody.height = 1024;
+          }
+
+          // Optional features
+          if (negativePrompt) {
+            requestBody.negative_prompt = negativePrompt;
+          }
+          if (stylePreset) {
+            requestBody.style_preset = stylePreset;
+          }
 
           const response = await fetch(`${baseUrl}/image/generate`, {
             method: "POST",
@@ -202,18 +242,33 @@ export default definePluginEntry({
             );
           }
 
-          const data = await response.json() as Record<string, unknown>;
-
-          if (data.images && Array.isArray(data.images)) {
-            for (const img of data.images as string[]) {
-              if (typeof img === 'string' && img.length > 0) {
-                const buffer = Buffer.from(img, "base64");
-                const timestamp = Date.now();
-                images.push({
-                  buffer,
-                  mimeType: DEFAULT_OUTPUT_MIME,
-                  fileName: `venice-${timestamp}-${images.length}.png`,
-                });
+          // Handle binary response (return_binary: true)
+          const contentType = response.headers.get("content-type") || "";
+          if (contentType.includes("image/")) {
+            // Binary response
+            const buffer = Buffer.from(await response.arrayBuffer());
+            const timestamp = Date.now();
+            const ext = outputFormat === "jpeg" ? "jpg" : outputFormat;
+            images.push({
+              buffer,
+              mimeType: `image/${outputFormat}`,
+              fileName: `venice-${timestamp}-${images.length}.${ext}`,
+            });
+          } else {
+            // JSON response (fallback)
+            const data = await response.json() as Record<string, unknown>;
+            if (data.images && Array.isArray(data.images)) {
+              for (const img of data.images as string[]) {
+                if (typeof img === 'string' && img.length > 0) {
+                  const buffer = Buffer.from(img, "base64");
+                  const timestamp = Date.now();
+                  const ext = outputFormat === "jpeg" ? "jpg" : outputFormat;
+                  images.push({
+                    buffer,
+                    mimeType: `image/${outputFormat}`,
+                    fileName: `venice-${timestamp}-${images.length}.${ext}`,
+                  });
+                }
               }
             }
           }
@@ -230,7 +285,12 @@ export default definePluginEntry({
             fileName: img.fileName,
           })),
           model: modelToUse,
-          metadata: { width, height },
+          metadata: { 
+            size: size || "1024x1024",
+            aspectRatio: aspectRatio,
+            resolution: resolution,
+            format: outputFormat,
+          },
         };
       },
     });
