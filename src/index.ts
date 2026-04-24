@@ -93,6 +93,8 @@ interface VeniceConfig extends OpenClawConfig {
   defaultNegativePrompt?: string;
   defaultStylePreset?: string;
   defaultOutputFormat?: "webp" | "png" | "jpeg";
+  // New video generation options
+  defaultVideoNegativePrompt?: string;
 }
 
 export default definePluginEntry({
@@ -347,6 +349,9 @@ export default definePluginEntry({
 
       async generateVideo(req: VideoGenerationRequest): Promise<VideoGenerationResult> {
         const { prompt, model, size, durationSeconds, agentDir, authStore, inputImages, aspectRatio } = req;
+        
+        // Get negative prompt from config
+        const negativePrompt = config.defaultVideoNegativePrompt;
 
         const auth = await resolveApiKeyForProvider({
           provider: "venice",
@@ -422,6 +427,11 @@ export default definePluginEntry({
           } else if (firstImage.buffer) {
             requestBody.image = firstImage.buffer.toString('base64');
           }
+        }
+
+        // Add negative prompt if configured
+        if (negativePrompt) {
+          requestBody.negative_prompt = negativePrompt;
         }
 
         // Queue the video generation
