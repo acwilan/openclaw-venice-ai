@@ -130,11 +130,11 @@ export default definePluginEntry({
           supportsResolution: true,
         },
         edit: {
-          enabled: false,
-          maxCount: 0,
-          maxInputImages: 0,
-          supportsSize: false,
-          supportsAspectRatio: false,
+          enabled: true,
+          maxCount: 1,
+          maxInputImages: 1,
+          supportsSize: true,
+          supportsAspectRatio: true,
           supportsResolution: false,
         },
         geometry: {
@@ -181,37 +181,159 @@ export default definePluginEntry({
 
         await mkdir(outputDir, { recursive: true });
 
+        // Check if this is an edit operation (has input images)
+        const inputImages = req.inputImages ?? [];
+        const isEdit = inputImages.length > 0;
+
+        // If editing, parse intent from prompt
+        let editIntent: "edit" | "removeBackground" | "upscale" = "edit";
+        if (isEdit) {
+          const promptLower = prompt.toLowerCase();
+          if (promptLower.includes("remove background") || promptLower.includes("remove the background")) {
+            editIntent = "removeBackground";
+          } else if (promptLower.includes("upscale") || promptLower.includes("enhance")) {
+            editIntent = "upscale";
+          }
+        }
+
         const images: Array<{ buffer: Buffer; mimeType: string; fileName: string }> = [];
 
-        for (let i = 0; i < count; i++) {
-          // Build request body with new features
-          const requestBody: Record<string, unknown> = {
-            model: modelToUse,
-            prompt: prompt,
-            seed: Math.floor(Math.random() * 999999999),
-            cfg_scale: typeof cfg === 'number' ? cfg : (config.defaultImageCfgScale ?? 7.0),
-            steps: config.defaultImageSteps ?? 30,
-            format: outputFormat === "jpeg" ? "jpg" : outputFormat,
-            embed_exif_metadata: false,
-            hide_watermark: config.hideWatermark ?? false,
-            safe_mode: config.safeMode ?? false,
-            return_binary: true, // Use binary for efficiency
-          };
-
-          // Sizing: aspect_ratio + resolution OR width + height
-          if (aspectRatio) {
-            // Models like Nano Banana use aspect_ratio + resolution
-            requestBody.aspect_ratio = aspectRatio;
-            if (resolution) {
-              requestBody.resolution = resolution;
-            }
-          } else if (size) {
-            // Traditional width/height
-            const [w, h] = size.split("x").map(Number);
-            if (w && h) {
-              requestBody.width = w;
-              requestBody.height = h;
+        // Handle editing operations
+        if (isEdit) {
+          const firstImage = inputImages[0];
+          
+          if (editIntent === "removeBackground") {
+            // Background removal
+            const requestBody: Record<string, unknown> = {};
+            if (firstImage.buffer) {
+              requestBody.image = firstImage.buffer.toString('base64');
             } else {
+              throw new Error("Input image must have buffer");
+            }
+
+            const response = await fetch(`${baseUrl}/image/background-remove`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`,
+              },
+              body: JSON.stringify(requestBody),
+            });
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`Background removal error: ${response.status} - ${errorText}`);
+            }
+
+            const buffer = Buffer.from(await response.arrayBuffer());
+            images.push({
+              buffer,
+              mimeType: "image/png",
+              fileName: `venice-bg-removed-${Date.now()}.png`,
+            });
+          } else if (editIntent === "upscale") {
+            // Image upscale
+            const requestBody: Record<string, unknown> = {
+              scale: 2,
+              enhance: true,
+            };
+            
+            if (firstImage.buffer) {
+              requestBody.image = firstImage.buffer.toString('base64');
+            } else {
+              throw new Error("Input image must have buffer");
+            }
+
+            const response = await fetch(`${baseUrl}/image/upscale`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`,
+              },
+              body: JSON.stringify(requestBody),
+            });
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`Upscale error: ${response.status} - ${errorText}`);
+            }
+
+            const buffer = Buffer.from(await response.arrayBuffer());
+            images.push({
+              buffer,
+              mimeType: "image/png",
+              fileName: `venice-upscaled-${Date.now()}.png`,
+            });
+          } else {
+            // General image edit
+            const requestBody: Record<string, unknown> = {
+              model: "qwen-edit",
+              prompt: prompt,
+              safe_mode: config.safeMode ?? true,
+            };
+            
+            if (firstImage.buffer) {
+              requestBody.image = firstImage.buffer.toString('base64');
+            } else {
+              throw new Error("Input image must have buffer");
+            }
+
+            if (aspectRatio) {
+              requestBody.aspect_ratio = aspectRatio;
+            }
+
+            const response = await fetch(`${baseUrl}/image/edit`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`,
+              },
+              body: JSON.stringify(requestBody),
+            });
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`Image edit error: ${response.status} - ${errorText}`);
+            }
+
+            const buffer = Buffer.from(await response.arrayBuffer());
+            images.push({
+              buffer,
+              mimeType: "image/png",
+              fileName: `venice-edit-${Date.now()}.png`,
+            });
+          }
+        } else {
+          // Standard image generation
+          for (let i = 0; i < count; i++) {
+            // Build request body with new features
+            const requestBody: Record<string, unknown> = {
+              model: modelToUse,
+              prompt: prompt,
+              seed: Math.floor(Math.random() * 999999999),
+              cfg_scale: typeof cfg === 'number' ? cfg : (config.defaultImageCfgScale ?? 7.0),
+              steps: config.defaultImageSteps ?? 30,
+              format: outputFormat === "jpeg" ? "jpg" : outputFormat,
+              embed_exif_metadata: false,
+              hide_watermark: config.hideWatermark ?? false,
+              safe_mode: config.safeMode ?? false,
+              return_binary: true, // Use binary for efficiency
+            };
+
+            // Sizing: aspect_ratio + resolution OR width + height
+            if (aspectRatio) {
+              // Models like Nano Banana use aspect_ratio + resolution
+              requestBody.aspect_ratio = aspectRatio;
+              if (resolution) {
+                requestBody.resolution = resolution;
+              }
+            } else if (size) {
+              // Traditional width/height
+              const [w, h] = size.split("x").map(Number);
+              if (w && h) {
+                requestBody.width = w;
+                requestBody.height = h;
+              } else {
               requestBody.width = 1024;
               requestBody.height = 1024;
             }
@@ -279,6 +401,7 @@ export default definePluginEntry({
             throw new Error("No images returned from Venice.ai API");
           }
         }
+      }
 
         return {
           images: images.map((img) => ({
