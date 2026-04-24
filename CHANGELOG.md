@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.0] - 2026-04-24
+
+### Added
+- **Image editing capabilities** via intent parsing:
+  - `remove background` → `/image/background-remove`
+  - `upscale` → `/image/upscale`  
+  - Other prompts → `/image/edit`
+- **Image generation enhancements**:
+  - Aspect ratio + resolution support (Nano Banana models)
+  - Negative prompts support
+  - Style presets support
+  - WebP format output (smaller files)
+  - Binary response handling for efficiency
+- **Video generation enhancements**:
+  - Negative prompts support
+  - Model-specific duration validation (WAN 2.5: 5s/10s, LTX: 6s-30s)
+
+### Notes
+- Image editing requires OpenClaw core support to pass uploaded images
+- Plugin code is ready; pending OpenClaw tool interface updates
+
 ## [2.0.0] - 2026-04-23
 
 ### Added
