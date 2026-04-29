@@ -58,8 +58,6 @@ Add to your `~/.openclaw/openclaw.json`:
       "venice-media": {
         "enabled": true,
         "config": {
-          "defaultImageModel": "lustify-v8",
-          "defaultVideoModel": "ltx-2-19b-distilled-text-to-video",
           "defaultImageSteps": 30,
           "defaultImageCfgScale": 7.0,
           "defaultVideoDuration": 6,
@@ -76,22 +74,22 @@ Add to your `~/.openclaw/openclaw.json`:
   "agents": {
     "defaults": {
       "imageGenerationModel": {
-        "primary": "venice-media/lustify-v8"
+        "primary": "venice-media/flux-2-max"
       },
       "videoGenerationModel": {
-        "primary": "venice-media/ltx-2-19b-distilled-text-to-video"
+        "primary": "venice-media/ltx-2-fast-text-to-video"
       }
     }
   }
 }
 ```
 
+**Note:** The `primary` model in `agents.defaults` is what OpenClaw uses when you request image/video generation. The plugin also has internal defaults (`flux-2-max` for images, `ltx-2-fast-text-to-video` for video) that only apply if OpenClaw calls the plugin without specifying a model.
+
 ### Config Options
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `defaultImageModel` | string | `lustify-v8` | Default image model |
-| `defaultVideoModel` | string | `ltx-2-19b-distilled-text-to-video` | Default video model |
 | `defaultImageSteps` | number | `30` | Image inference steps (1-50) |
 | `defaultImageCfgScale` | number | `7.0` | Image guidance scale (1.0-20.0) |
 | `defaultVideoDuration` | number | `6` | Video duration in seconds |
@@ -161,7 +159,6 @@ Add sunglasses to the person in this image
 ### Image Models
 
 Popular models include:
-- `lustify-v8` - Default, good quality
 - `flux-2-max` - High quality
 - `flux-2-pro` - Professional quality
 - `venice-sd35` - Stable Diffusion 3.5
@@ -269,8 +266,6 @@ Add to your `~/.openclaw/openclaw.json`:
       "venice-media": {
         "enabled": true,
         "config": {
-          "defaultImageModel": "flux-2-max",
-          "defaultVideoModel": "ltx-2-fast-text-to-video",
           "defaultImageSteps": 30,
           "defaultImageCfgScale": 7.0,
           "defaultVideoDuration": 6,
@@ -284,7 +279,7 @@ Add to your `~/.openclaw/openclaw.json`:
   "agents": {
     "defaults": {
       "imageGenerationModel": {
-        "primary": "venice-media/lustify-v8"
+        "primary": "venice-media/flux-2-max"
       },
       "videoGenerationModel": {
         "primary": "venice-media/ltx-2-fast-text-to-video"
@@ -294,12 +289,12 @@ Add to your `~/.openclaw/openclaw.json`:
 }
 ```
 
+**Note:** Set your preferred models in `agents.defaults` — OpenClaw passes these to the plugin automatically.
+
 ### Config Options
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `defaultImageModel` | string | `lustify-v8` | Default image model |
-| `defaultVideoModel` | string | `ltx-2-fast-text-to-video` | Default video model |
 | `defaultImageSteps` | number | `30` | Image inference steps (1-50) |
 | `defaultImageCfgScale` | number | `7.0` | Image guidance scale (1.0-20.0) |
 | `defaultVideoDuration` | number | `6` | Video duration in seconds (valid: 6,8,10,12,14,15,16,18,20,30) |
@@ -335,7 +330,6 @@ Generate a video of waves crashing on a beach
 ### Image Models
 
 Popular models include:
-- `lustify-v8` - Default, good quality
 - `flux-2-max` - High quality
 - `flux-2-pro` - Professional quality
 - `venice-sd35` - Stable Diffusion 3.5
