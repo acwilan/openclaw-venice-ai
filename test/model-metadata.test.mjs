@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   DEFAULT_UPSCALE_MODEL,
+  chooseBestFitImageSize,
   chooseSupportedAspectRatio,
   chooseSupportedDuration,
   chooseSupportedImageResolution,
@@ -56,6 +57,17 @@ test("size inference helpers normalize expected geometry", () => {
   assert.equal(inferAspectRatioFromSize("1536x1024"), "3:2");
   assert.equal(inferRawVideoResolutionFromSize("1920x1080"), "1080p");
   assert.deepEqual(normalizeImageSize("1025x1025", 8), { width: 1024, height: 1024 });
+});
+
+test("chooseBestFitImageSize prefers same orientation and closest safe aspect", () => {
+  assert.deepEqual(
+    chooseBestFitImageSize("1024x1536", ["1024x1024", "832x1216", "1216x832", "512x768"], 8),
+    { width: 832, height: 1216 }
+  );
+  assert.deepEqual(
+    chooseBestFitImageSize("1536x1024", ["1024x1024", "832x1216", "1216x832", "768x512"], 8),
+    { width: 1216, height: 832 }
+  );
 });
 
 test("DEFAULT_UPSCALE_MODEL is discovered from Venice catalog", () => {

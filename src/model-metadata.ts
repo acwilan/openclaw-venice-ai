@@ -376,6 +376,54 @@ export function normalizeImageSize(
   };
 }
 
+export function chooseBestFitImageSize(
+  requestedSize: string | undefined,
+  supportedSizes: readonly string[],
+  divisor = 1,
+  fallback = { width: 1024, height: 1024 }
+): { width: number; height: number } {
+  const requested = normalizeImageSize(requestedSize, divisor, fallback);
+
+  const candidates = supportedSizes
+    .map((size) => ({ parsed: normalizeImageSize(size, divisor, fallback) }))
+    .filter((candidate) => candidate.parsed.width > 0 && candidate.parsed.height > 0);
+
+  if (candidates.length === 0) {
+    return requested;
+  }
+
+  const requestedAspect = requested.width / requested.height;
+  const requestedOrientation = getOrientation(requested.width, requested.height);
+
+  const scored = candidates.map(({ parsed }) => {
+    const aspect = parsed.width / parsed.height;
+    const orientation = getOrientation(parsed.width, parsed.height);
+    const aspectDiff = Math.abs(aspect - requestedAspect);
+    const dimensionDelta = Math.abs(parsed.width - requested.width) + Math.abs(parsed.height - requested.height);
+    const areaDelta = Math.abs((parsed.width * parsed.height) - (requested.width * requested.height));
+    const orientationPenalty = orientation === requestedOrientation ? 0 : 1;
+
+    return {
+      parsed,
+      orientationPenalty,
+      dimensionDelta,
+      areaDelta,
+      aspectDiff,
+    };
+  });
+
+  scored.sort((a, b) => {
+    return (
+      a.orientationPenalty - b.orientationPenalty ||
+      a.dimensionDelta - b.dimensionDelta ||
+      a.areaDelta - b.areaDelta ||
+      a.aspectDiff - b.aspectDiff
+    );
+  });
+
+  return scored[0]?.parsed ?? requested;
+}
+
 function loadModelList<TConstraints>(url: URL): VeniceModelRecord<TConstraints>[] {
   const parsed = JSON.parse(readFileSync(url, "utf8")) as VeniceModelList<TConstraints>;
   return parsed.data ?? [];
@@ -471,6 +519,13 @@ function inferBaseModelIdForEdit(editModelId: string): string | undefined {
 function normalizeDimension(value: number, divisor: number): number {
   const effectiveDivisor = Math.max(1, divisor);
   return Math.max(effectiveDivisor, Math.floor(value / effectiveDivisor) * effectiveDivisor);
+}
+
+function getOrientation(width: number, height: number): "square" | "landscape" | "portrait" {
+  if (width === height) {
+    return "square";
+  }
+  return width > height ? "landscape" : "portrait";
 }
 
 function greatestCommonDivisor(a: number, b: number): number {

@@ -20,11 +20,14 @@ import {
   VENICE_API_BASE_URL,
   type VeniceConfig,
 } from "./config.js";
+
+const PIXEL_MODEL_MAX_DIMENSION = 1280;
 import {
   DEFAULT_UPSCALE_MODEL,
   VENICE_IMAGE_ASPECT_RATIOS,
   VENICE_IMAGE_MODELS,
   VENICE_IMAGE_RESOLUTIONS,
+  chooseBestFitImageSize,
   chooseSupportedAspectRatio,
   chooseSupportedImageResolution,
   getAspectRatios,
@@ -333,7 +336,11 @@ export function buildImageGenerationRequestBody(args: {
       requestBody.resolution = resolutionToUse;
     }
   } else {
-    const normalizedSize = normalizeImageSize(args.size, divisor);
+    const safeSupportedSizes = VENICE_SUPPORTED_SIZES.filter((size) => {
+      const normalized = normalizeImageSize(size, divisor);
+      return Math.max(normalized.width, normalized.height) <= PIXEL_MODEL_MAX_DIMENSION;
+    });
+    const normalizedSize = chooseBestFitImageSize(args.size, safeSupportedSizes, divisor);
     requestBody.width = normalizedSize.width;
     requestBody.height = normalizedSize.height;
   }

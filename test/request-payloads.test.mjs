@@ -33,6 +33,22 @@ test("image generation uses width/height for pixel-based models and normalizes d
   assert.ok(!("aspect_ratio" in body));
 });
 
+test("image generation picks best-fit safe size for pixel-based Venice models", () => {
+  const body = buildImageGenerationRequestBody({
+    prompt: "portrait",
+    modelToUse: "lustify-v8",
+    size: "1024x1536",
+    config: imageConfig,
+    outputFormat: "png",
+    seed: 99,
+  });
+
+  assert.equal(body.width, 832);
+  assert.equal(body.height, 1216);
+  assert.ok(!("aspect_ratio" in body));
+  assert.ok(!("resolution" in body));
+});
+
 test("image generation uses aspect ratio and resolution for tiered models", () => {
   const body = buildImageGenerationRequestBody({
     prompt: "landscape",
