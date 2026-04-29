@@ -156,7 +156,16 @@ export function registerImageGenerationProvider(api: OpenClawPluginApi, config: 
         );
       }
 
-      return { images, model: actualModel };
+      return {
+        images,
+        model: actualModel,
+        metadata: {
+          size: size || (aspectRatio ? undefined : "1024x1024"),
+          aspectRatio,
+          resolution,
+          format: outputFormat,
+        },
+      };
     },
   });
 }
