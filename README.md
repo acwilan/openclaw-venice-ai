@@ -42,7 +42,7 @@ openclaw plugins install "$(pwd)"
 This plugin uses the **bundled Venice provider** for authentication. You need to set up your Venice API key once:
 
 ```bash
-openclaw models auth setup-token --provider venice
+openclaw models auth paste-token --provider venice
 ```
 
 Enter your Venice.ai API key when prompted. This same key is used for both text and media generation.
@@ -201,7 +201,7 @@ See Venice.ai docs for full list: https://venice.ai/docs
 
 ## Important Notes
 
-1. **API Key Required:** You must obtain a Venice.ai API key from https://venice.ai/settings/api and configure it via `openclaw models auth setup-token --provider venice`
+1. **API Key Required:** You must obtain a Venice.ai API key from https://venice.ai/settings/api and configure it via `openclaw models auth paste-token --provider venice`
 
 2. **Model Availability:** Venice.ai regularly adds new models. The plugin includes popular models but may not list every available model. Check Venice.ai documentation for the complete list.
 
@@ -253,7 +253,7 @@ openclaw plugins install "$(pwd)"
 This plugin uses the **bundled Venice provider** for authentication. You need to set up your Venice API key once:
 
 ```bash
-openclaw models auth setup-token --provider venice
+openclaw models auth paste-token --provider venice
 ```
 
 Enter your Venice.ai API key when prompted. This same key is used for both text and media generation.
@@ -358,7 +358,7 @@ See Venice.ai docs for full list: https://venice.ai/docs
 
 ## Important Notes
 
-1. **API Key Required:** You must obtain a Venice.ai API key from https://venice.ai/settings/api and configure it via `openclaw models auth setup-token --provider venice`
+1. **API Key Required:** You must obtain a Venice.ai API key from https://venice.ai/settings/api and configure it via `openclaw models auth paste-token --provider venice`
 
 2. **Model Availability:** Venice.ai regularly adds new models. The plugin includes popular models but may not list every available model. Check Venice.ai documentation for the complete list.
 
