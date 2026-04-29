@@ -21,6 +21,7 @@ All notable changes to this project will be documented in this file.
 - Aligned `defaultVideoDuration` schema default with runtime behavior (`6` seconds)
 - Refactored catalog maintenance scripts to avoid OpenClaw install security-scan false positives
 - Removed duplicated README content and refreshed configuration docs
+- Pixel-based image models now choose the closest safe preset size when a requested size would exceed Venice model limits (for example `lustify-v8` falling back from `1024x1536` to `832x1216`)
 
 ## [2.2.0] - 2026-04-28
 

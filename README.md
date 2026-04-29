@@ -251,7 +251,8 @@ See Venice.ai docs for full list: https://venice.ai/docs
 2. **Model Availability:** Venice.ai regularly adds new models. The plugin includes popular models but may not list every available model.
 3. **File Size Limits:** Telegram media limits can be tight. Smaller images, shorter videos, and lighter models are safer.
 4. **Duration Validation:** The plugin rounds requested video durations to the nearest valid duration for the selected model.
-5. **Image Editing:** The plugin code supports image editing, but full uploaded-image plumbing still depends on OpenClaw core behavior.
+5. **Best-fit image sizing:** For pixel-based Venice models that do not expose rich geometry capabilities, the plugin now picks the closest safe preset size instead of sending an oversize width/height that Venice would reject.
+6. **Image Editing:** The plugin code supports image editing, but full uploaded-image plumbing still depends on OpenClaw core behavior.
 
 ## Version History
 
