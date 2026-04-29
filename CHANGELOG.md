@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.0] - 2026-04-28
+
+### Changed
+- **Major refactor**: Split monolithic 718-line `index.ts` into modular structure:
+  - `src/config.ts` - Shared types and constants
+  - `src/image-generation.ts` - Image generation provider (331 lines)
+  - `src/video-generation.ts` - Video generation provider (309 lines)
+  - `src/index.ts` - Clean entry point (27 lines)
+- **Updated default image model** to `flux-2-max` (safer choice)
+- **Simplified configuration**: Removed duplicate `defaultImageModel`/`defaultVideoModel` from plugin config
+  - Use `agents.defaults.imageGenerationModel.primary` and `agents.defaults.videoGenerationModel.primary` instead
+  - Plugin internal defaults only used as fallbacks
+- **Fixed ES module compatibility**:
+  - Grouped nullish coalescing operators (`||` with `??`) for proper parsing
+  - Moved `isProviderApiKeyConfigured` to top-level imports
+- **Updated documentation**:
+  - Auth command changed to `openclaw models auth paste-token --provider venice`
+  - Clearer explanation of config hierarchy
+
 ## [2.1.1] - 2026-04-24
 
 ### Changed
