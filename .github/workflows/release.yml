@@ -25,11 +25,14 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build
-        run: npm run build
+      - name: Check model catalogs
+        run: npm run check-model-catalogs
+
+      - name: Type check
+        run: npm run typecheck
 
       - name: Test
-        run: npm run test || echo "No tests configured"
+        run: npm test
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1

@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- Metadata-driven Venice model catalog loader from generated Venice model snapshots
+- `npm run refresh-model-catalogs` script to fetch fresh `image`, `video`, `inpaint`, and `upscale` catalogs from Venice `/models`
+- `npm run check-model-catalogs` and `npm run check-model-catalogs:drift` for shape validation and live drift detection
+- Initial unit tests for metadata-driven routing and normalization helpers
+- Per-model video duration capability map exposed through provider capabilities
+
+### Changed
+- Video model selection now auto-switches between text-to-video and image-to-video sibling models when needed
+- Image edit selection now resolves edit-capable sibling models (for example `gpt-image-2` → `gpt-image-2-edit`) instead of hardcoding `qwen-edit`
+- Image/video option normalization now prefers supported per-model aspect ratios, resolutions, and durations with safer fallback behavior
+
+### Fixed
+- Added missing config schema fields for image/video negative prompts, style preset, and output format
+- Aligned `defaultVideoDuration` schema default with runtime behavior (`6` seconds)
+- Refactored catalog maintenance scripts to avoid OpenClaw install security-scan false positives
+- Removed duplicated README content and refreshed configuration docs
+
 ## [2.2.0] - 2026-04-28
 
 ### Changed

@@ -1,0 +1,427 @@
+{
+  "data": [
+    {
+      "created": 1756157864,
+      "id": "qwen-edit",
+      "model_spec": {
+        "pricing": {
+          "inpaint": {
+            "usd": 0.04,
+            "diem": 0.04
+          }
+        },
+        "constraints": {
+          "aspectRatios": [
+            "auto",
+            "1:1",
+            "3:2",
+            "16:9",
+            "21:9",
+            "9:16",
+            "2:3",
+            "3:4",
+            "4:5"
+          ],
+          "promptCharacterLimit": 1500,
+          "combineImages": true
+        },
+        "name": "Qwen Edit 2511",
+        "offline": false,
+        "privacy": "private",
+        "traits": []
+      },
+      "object": "model",
+      "owned_by": "venice.ai",
+      "type": "inpaint"
+    },
+    {
+      "created": 1774396800,
+      "id": "firered-image-edit",
+      "model_spec": {
+        "pricing": {
+          "inpaint": {
+            "usd": 0.04,
+            "diem": 0.04
+          }
+        },
+        "constraints": {
+          "aspectRatios": [
+            "auto",
+            "1:1",
+            "3:2",
+            "16:9",
+            "21:9",
+            "9:16",
+            "2:3",
+            "3:4",
+            "4:5"
+          ],
+          "promptCharacterLimit": 5000,
+          "combineImages": false
+        },
+        "name": "FireRed Image Edit 1.1",
+        "offline": false,
+        "privacy": "private",
+        "traits": []
+      },
+      "object": "model",
+      "owned_by": "venice.ai",
+      "type": "inpaint"
+    },
+    {
+      "created": 1769644800,
+      "id": "grok-imagine-edit",
+      "model_spec": {
+        "pricing": {
+          "inpaint": {
+            "usd": 0.03,
+            "diem": 0.03
+          }
+        },
+        "constraints": {
+          "aspectRatios": [
+            "1:1",
+            "16:9",
+            "9:16",
+            "3:4",
+            "3:2",
+            "2:3"
+          ],
+          "promptCharacterLimit": 7500,
+          "combineImages": true
+        },
+        "name": "Grok Imagine",
+        "offline": false,
+        "privacy": "private",
+        "traits": []
+      },
+      "object": "model",
+      "owned_by": "venice.ai",
+      "type": "inpaint"
+    },
+    {
+      "created": 1772582400,
+      "id": "qwen-image-2-edit",
+      "model_spec": {
+        "pricing": {
+          "inpaint": {
+            "usd": 0.05,
+            "diem": 0.05
+          }
+        },
+        "constraints": {
+          "aspectRatios": [
+            "1:1",
+            "3:2",
+            "16:9",
+            "21:9",
+            "9:16",
+            "2:3",
+            "3:4",
+            "4:5"
+          ],
+          "promptCharacterLimit": 10000,
+          "combineImages": true
+        },
+        "name": "Qwen Image 2",
+        "offline": false,
+        "privacy": "anonymized",
+        "traits": []
+      },
+      "object": "model",
+      "owned_by": "venice.ai",
+      "type": "inpaint"
+    },
+    {
+      "created": 1772582400,
+      "id": "qwen-image-2-pro-edit",
+      "model_spec": {
+        "pricing": {
+          "inpaint": {
+            "usd": 0.1,
+            "diem": 0.1
+          }
+        },
+        "constraints": {
+          "aspectRatios": [
+            "1:1",
+            "3:2",
+            "16:9",
+            "21:9",
+            "9:16",
+            "2:3",
+            "3:4",
+            "4:5"
+          ],
+          "promptCharacterLimit": 10000,
+          "combineImages": true
+        },
+        "name": "Qwen Image 2 Pro",
+        "offline": false,
+        "privacy": "anonymized",
+        "traits": []
+      },
+      "object": "model",
+      "owned_by": "venice.ai",
+      "type": "inpaint"
+    },
+    {
+      "created": 1776902400,
+      "id": "wan-2-7-pro-edit",
+      "model_spec": {
+        "pricing": {
+          "inpaint": {
+            "usd": 0.094,
+            "diem": 0.094
+          }
+        },
+        "constraints": {
+          "aspectRatios": [
+            "auto"
+          ],
+          "promptCharacterLimit": 5000,
+          "combineImages": true
+        },
+        "name": "Wan 2.7 Pro Edit",
+        "offline": false,
+        "privacy": "anonymized",
+        "traits": []
+      },
+      "object": "model",
+      "owned_by": "venice.ai",
+      "type": "inpaint"
+    },
+    {
+      "created": 1767571200,
+      "id": "flux-2-max-edit",
+      "model_spec": {
+        "pricing": {
+          "inpaint": {
+            "usd": 0.19,
+            "diem": 0.19
+          }
+        },
+        "constraints": {
+          "aspectRatios": [
+            "auto",
+            "1:1",
+            "3:2",
+            "16:9",
+            "21:9",
+            "9:16",
+            "2:3",
+            "3:4",
+            "4:5"
+          ],
+          "promptCharacterLimit": 3000,
+          "combineImages": true
+        },
+        "name": "Flux 2 Max",
+        "offline": false,
+        "privacy": "anonymized",
+        "traits": []
+      },
+      "object": "model",
+      "owned_by": "venice.ai",
+      "type": "inpaint"
+    },
+    {
+      "created": 1776729600,
+      "id": "gpt-image-2-edit",
+      "model_spec": {
+        "pricing": {
+          "inpaint": {
+            "usd": 0.36,
+            "diem": 0.36
+          }
+        },
+        "constraints": {
+          "aspectRatios": [
+            "1:1",
+            "3:2",
+            "16:9",
+            "21:9",
+            "9:16",
+            "2:3",
+            "3:4",
+            "4:5"
+          ],
+          "promptCharacterLimit": 10000,
+          "combineImages": true
+        },
+        "name": "GPT Image 2",
+        "offline": false,
+        "privacy": "anonymized",
+        "traits": []
+      },
+      "object": "model",
+      "owned_by": "venice.ai",
+      "type": "inpaint"
+    },
+    {
+      "created": 1767555000,
+      "id": "gpt-image-1-5-edit",
+      "model_spec": {
+        "pricing": {
+          "inpaint": {
+            "usd": 0.36,
+            "diem": 0.36
+          }
+        },
+        "constraints": {
+          "aspectRatios": [
+            "auto",
+            "1:1",
+            "3:2",
+            "2:3"
+          ],
+          "promptCharacterLimit": 5000,
+          "combineImages": true
+        },
+        "name": "GPT Image 1.5",
+        "offline": false,
+        "privacy": "anonymized",
+        "traits": []
+      },
+      "object": "model",
+      "owned_by": "venice.ai",
+      "type": "inpaint"
+    },
+    {
+      "created": 1772064000,
+      "id": "nano-banana-2-edit",
+      "model_spec": {
+        "pricing": {
+          "inpaint": {
+            "usd": 0.1,
+            "diem": 0.1
+          }
+        },
+        "constraints": {
+          "aspectRatios": [
+            "auto",
+            "1:1",
+            "3:2",
+            "16:9",
+            "21:9",
+            "9:16",
+            "2:3",
+            "3:4",
+            "4:5"
+          ],
+          "promptCharacterLimit": 32768,
+          "combineImages": true
+        },
+        "name": "Nano Banana 2",
+        "offline": false,
+        "privacy": "anonymized",
+        "traits": []
+      },
+      "object": "model",
+      "owned_by": "venice.ai",
+      "type": "inpaint"
+    },
+    {
+      "created": 1765584000,
+      "id": "nano-banana-pro-edit",
+      "model_spec": {
+        "pricing": {
+          "inpaint": {
+            "usd": 0.18,
+            "diem": 0.18
+          }
+        },
+        "constraints": {
+          "aspectRatios": [
+            "auto",
+            "1:1",
+            "3:2",
+            "16:9",
+            "21:9",
+            "9:16",
+            "2:3",
+            "3:4",
+            "4:5"
+          ],
+          "promptCharacterLimit": 32768,
+          "combineImages": true
+        },
+        "name": "Nano Banana Pro",
+        "offline": false,
+        "privacy": "anonymized",
+        "traits": []
+      },
+      "object": "model",
+      "owned_by": "venice.ai",
+      "type": "inpaint"
+    },
+    {
+      "created": 1771804800,
+      "id": "seedream-v5-lite-edit",
+      "model_spec": {
+        "pricing": {
+          "inpaint": {
+            "usd": 0.05,
+            "diem": 0.05
+          }
+        },
+        "constraints": {
+          "aspectRatios": [
+            "auto",
+            "1:1",
+            "3:2",
+            "16:9",
+            "9:16",
+            "2:3",
+            "3:4",
+            "4:5"
+          ],
+          "promptCharacterLimit": 10000,
+          "combineImages": true
+        },
+        "name": "Seedream V5 Lite",
+        "offline": false,
+        "privacy": "anonymized",
+        "traits": []
+      },
+      "object": "model",
+      "owned_by": "venice.ai",
+      "type": "inpaint"
+    },
+    {
+      "created": 1767484800,
+      "id": "seedream-v4-edit",
+      "model_spec": {
+        "pricing": {
+          "inpaint": {
+            "usd": 0.05,
+            "diem": 0.05
+          }
+        },
+        "constraints": {
+          "aspectRatios": [
+            "auto",
+            "1:1",
+            "3:2",
+            "16:9",
+            "9:16",
+            "2:3",
+            "3:4",
+            "4:5"
+          ],
+          "promptCharacterLimit": 10000,
+          "combineImages": true
+        },
+        "name": "Seedream V4.5",
+        "offline": false,
+        "privacy": "anonymized",
+        "traits": []
+      },
+      "object": "model",
+      "owned_by": "venice.ai",
+      "type": "inpaint"
+    }
+  ],
+  "object": "list",
+  "type": "inpaint"
+}

@@ -17,7 +17,12 @@
   },
   "scripts": {
     "build": "tsc",
-    "dev": "tsc --watch"
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test ./test/*.test.mjs",
+    "dev": "tsc --watch",
+    "refresh-model-catalogs": "node ./scripts/refresh-model-catalogs.mjs",
+    "check-model-catalogs": "node ./scripts/check-model-catalogs.mjs",
+    "check-model-catalogs:drift": "node ./scripts/check-model-catalogs.mjs --check-drift"
   },
   "dependencies": {
     "openclaw": "^2026.4.20"

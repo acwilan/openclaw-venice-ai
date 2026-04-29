@@ -18,12 +18,30 @@ import {
   PROVIDER_ID,
   PROVIDER_NAME,
   DEFAULT_VIDEO_MODEL,
-  VENICE_VIDEO_MODELS,
   VENICE_VIDEO_SIZES,
   VENICE_API_BASE_URL,
   DEFAULT_VIDEO_MIME,
   type VeniceConfig,
 } from "./config.js";
+import {
+  VENICE_VIDEO_ASPECT_RATIOS,
+  VENICE_VIDEO_DURATIONS,
+  VENICE_VIDEO_DURATIONS_BY_MODEL,
+  VENICE_VIDEO_MODELS,
+  VENICE_VIDEO_RESOLUTIONS,
+  chooseSupportedAspectRatio,
+  chooseSupportedDuration,
+  chooseSupportedVideoResolution,
+  getAspectRatios,
+  getDefaultAspectRatio,
+  getDefaultVideoResolution,
+  getRawVideoResolutions,
+  getVideoDurations,
+  getVideoModelMetadata,
+  inferAspectRatioFromSize,
+  inferRawVideoResolutionFromSize,
+  resolveVideoModelForMode,
+} from "./model-metadata.js";
 
 export function registerVideoGenerationProvider(api: OpenClawPluginApi, config: VeniceConfig): void {
   const outputDir = config.outputDir
@@ -38,21 +56,23 @@ export function registerVideoGenerationProvider(api: OpenClawPluginApi, config: 
     models: [...VENICE_VIDEO_MODELS],
 
     isConfigured: ({ agentDir }) => isProviderApiKeyConfigured({
-        provider: "venice",
-        agentDir,
-      }),
+      provider: "venice",
+      agentDir,
+    }),
 
     capabilities: {
       generate: {
         maxVideos: 1,
         maxDurationSeconds: 60,
-        supportedDurationSeconds: [5, 6, 8, 10, 12, 14, 15, 16, 18, 20, 30, 60],
+        supportedDurationSeconds: [...VENICE_VIDEO_DURATIONS],
+        supportedDurationSecondsByModel: VENICE_VIDEO_DURATIONS_BY_MODEL,
         sizes: [...VENICE_VIDEO_SIZES],
-        aspectRatios: ["16:9", "9:16", "1:1"],
+        aspectRatios: [...VENICE_VIDEO_ASPECT_RATIOS],
+        resolutions: [...VENICE_VIDEO_RESOLUTIONS],
         supportsSize: true,
         supportsAspectRatio: true,
-        supportsResolution: false,
-        supportsAudio: false,
+        supportsResolution: VENICE_VIDEO_RESOLUTIONS.length > 0,
+        supportsAudio: true,
         supportsWatermark: true,
       },
       imageToVideo: {
@@ -60,12 +80,15 @@ export function registerVideoGenerationProvider(api: OpenClawPluginApi, config: 
         maxVideos: 1,
         maxInputImages: 1,
         maxDurationSeconds: 60,
-        supportedDurationSeconds: [5, 10, 15, 30, 60],
+        supportedDurationSeconds: [...VENICE_VIDEO_DURATIONS],
+        supportedDurationSecondsByModel: VENICE_VIDEO_DURATIONS_BY_MODEL,
         sizes: [...VENICE_VIDEO_SIZES],
-        aspectRatios: ["16:9", "9:16", "1:1"],
+        aspectRatios: [...VENICE_VIDEO_ASPECT_RATIOS],
+        resolutions: [...VENICE_VIDEO_RESOLUTIONS],
         supportsSize: true,
         supportsAspectRatio: true,
-        supportsResolution: false,
+        supportsResolution: VENICE_VIDEO_RESOLUTIONS.length > 0,
+        supportsAudio: true,
       },
       videoToVideo: {
         enabled: false,
@@ -76,9 +99,20 @@ export function registerVideoGenerationProvider(api: OpenClawPluginApi, config: 
     },
 
     async generateVideo(req: VideoGenerationRequest): Promise<VideoGenerationResult> {
-      const { prompt, model, size, durationSeconds, agentDir, authStore, inputImages, aspectRatio } = req;
+      const {
+        prompt,
+        model,
+        size,
+        durationSeconds,
+        agentDir,
+        authStore,
+        inputImages,
+        aspectRatio,
+        resolution,
+        audio,
+        watermark,
+      } = req;
 
-      // Access runtime config
       const pluginConfig = req.cfg?.plugins?.entries?.[PROVIDER_ID]?.config as VeniceConfig | undefined;
       const negativePrompt = pluginConfig?.defaultVideoNegativePrompt ?? config.defaultVideoNegativePrompt;
 
@@ -97,51 +131,24 @@ export function registerVideoGenerationProvider(api: OpenClawPluginApi, config: 
       }
 
       const baseUrl = config.baseUrl ?? VENICE_API_BASE_URL;
-      const modelToUse = model || (pluginConfig?.defaultVideoModel ?? config.defaultVideoModel ?? DEFAULT_VIDEO_MODEL);
+      const requestedModel = model || (pluginConfig?.defaultVideoModel ?? config.defaultVideoModel ?? DEFAULT_VIDEO_MODEL);
 
-      // Determine aspect ratio
-      let aspectRatioToUse = "16:9";
-      if (aspectRatio) {
-        aspectRatioToUse = aspectRatio;
-      } else if (size) {
-        const [w, h] = size.split("x").map(Number);
-        if (w && h) {
-          const ratio = w / h;
-          if (Math.abs(ratio - 16 / 9) < 0.1) aspectRatioToUse = "16:9";
-          else if (Math.abs(ratio - 9 / 16) < 0.1) aspectRatioToUse = "9:16";
-          else if (Math.abs(ratio - 1) < 0.1) aspectRatioToUse = "1:1";
-        }
-      }
-
-      // Determine duration
-      const requestedDuration = durationSeconds || config.defaultVideoDuration || 6;
-      const videoDuration = getValidDuration(modelToUse, requestedDuration);
-      const durationStr = `${videoDuration}s`;
+      const { model: modelToUse, body: requestBody, normalized } = buildVideoQueueRequestBody({
+        prompt,
+        requestedModel,
+        size,
+        durationSeconds,
+        inputImages,
+        aspectRatio,
+        resolution,
+        audio,
+        watermark,
+        config,
+        negativePrompt,
+      });
 
       await mkdir(outputDir, { recursive: true });
 
-      // Build request
-      const requestBody: Record<string, unknown> = {
-        model: modelToUse,
-        prompt,
-        aspect_ratio: aspectRatioToUse,
-        duration: durationStr,
-      };
-
-      if (inputImages && inputImages.length > 0) {
-        const firstImage = inputImages[0];
-        if (firstImage.url) {
-          requestBody.image_url = firstImage.url;
-        } else if (firstImage.buffer) {
-          requestBody.image = firstImage.buffer.toString("base64");
-        }
-      }
-
-      if (negativePrompt) {
-        requestBody.negative_prompt = negativePrompt;
-      }
-
-      // Queue the video
       const queueResponse = await fetch(`${baseUrl}/video/queue`, {
         method: "POST",
         headers: {
@@ -163,34 +170,105 @@ export function registerVideoGenerationProvider(api: OpenClawPluginApi, config: 
         throw new Error("No queue ID returned from Venice.ai API");
       }
 
-      // Poll for completion
       return await pollForVideoCompletion(
         queueId,
         modelToUse,
         baseUrl,
         apiKey,
-        aspectRatioToUse,
-        videoDuration,
-        outputDir
+        normalized.normalizedAspectRatio as string | undefined,
+        normalized.normalizedDuration as number,
+        outputDir,
+        normalized
       );
     },
   });
 }
 
-function getValidDuration(model: string, requested: number): number {
-  let validDurations: number[];
-  
-  if (model.includes("wan-2.5")) {
-    validDurations = [5, 10];
-  } else if (model.includes("wan-2.7") || model.includes("wan-2.6")) {
-    validDurations = [5, 10, 15];
-  } else {
-    validDurations = [6, 8, 10, 12, 14, 15, 16, 18, 20, 30];
+export function buildVideoQueueRequestBody(args: {
+  prompt: string;
+  requestedModel: string;
+  size?: string;
+  durationSeconds?: number;
+  inputImages?: Array<{ url?: string; buffer?: Buffer }>;
+  aspectRatio?: string;
+  resolution?: string;
+  audio?: boolean;
+  watermark?: boolean;
+  config: VeniceConfig;
+  negativePrompt?: string;
+}): { model: string; body: Record<string, unknown>; normalized: Record<string, unknown> } {
+  const mode = args.inputImages && args.inputImages.length > 0 ? "image-to-video" : "text-to-video";
+  const modelToUse = resolveVideoModelForMode(args.requestedModel, mode);
+  const modelConstraints = getVideoModelMetadata(modelToUse)?.model_spec?.constraints;
+
+  const supportedAspectRatios = getAspectRatios(modelConstraints);
+  const supportedResolutions = getRawVideoResolutions(modelConstraints);
+  const supportedDurations = getVideoDurations(modelConstraints);
+
+  const aspectRatioToUse = chooseSupportedAspectRatio(
+    args.aspectRatio ?? inferAspectRatioFromSize(args.size),
+    supportedAspectRatios,
+    getDefaultAspectRatio(modelConstraints)
+  );
+
+  const requestedDuration = args.durationSeconds ?? args.config.defaultVideoDuration ?? 6;
+  const videoDuration = chooseSupportedDuration(requestedDuration, supportedDurations) ?? requestedDuration;
+
+  const resolutionToUse = chooseSupportedVideoResolution(
+    args.resolution ?? inferRawVideoResolutionFromSize(args.size),
+    supportedResolutions,
+    getDefaultVideoResolution(modelConstraints)
+  );
+
+  const requestBody: Record<string, unknown> = {
+    model: modelToUse,
+    prompt: args.prompt,
+    duration: `${videoDuration}s`,
+  };
+
+  if (aspectRatioToUse && supportedAspectRatios.length > 0) {
+    requestBody.aspect_ratio = aspectRatioToUse;
   }
 
-  return validDurations.reduce((prev, curr) =>
-    Math.abs(curr - requested) < Math.abs(prev - requested) ? curr : prev
-  );
+  if (resolutionToUse && supportedResolutions.length > 0) {
+    requestBody.resolution = resolutionToUse;
+  }
+
+  if (args.inputImages && args.inputImages.length > 0) {
+    const firstImage = args.inputImages[0];
+    if (firstImage.url) {
+      requestBody.image_url = firstImage.url;
+    } else if (firstImage.buffer) {
+      requestBody.image = firstImage.buffer.toString("base64");
+    }
+  }
+
+  if (args.negativePrompt) {
+    requestBody.negative_prompt = args.negativePrompt;
+  }
+
+  if (args.audio === true && modelConstraints?.audio) {
+    requestBody.audio = true;
+  }
+
+  if (typeof args.watermark === "boolean") {
+    requestBody.watermark = args.watermark;
+  }
+
+  return {
+    model: modelToUse,
+    body: requestBody,
+    normalized: {
+      requestedModel: args.requestedModel,
+      normalizedModel: modelToUse,
+      requestedAspectRatio: args.aspectRatio,
+      normalizedAspectRatio: aspectRatioToUse,
+      requestedResolution: args.resolution,
+      normalizedResolution: resolutionToUse,
+      requestedDuration: args.durationSeconds,
+      normalizedDuration: videoDuration,
+    },
+  };
 }
 
 async function pollForVideoCompletion(
@@ -198,9 +276,10 @@ async function pollForVideoCompletion(
   model: string,
   baseUrl: string,
   apiKey: string,
-  aspectRatio: string,
+  aspectRatio: string | undefined,
   duration: number,
-  outputDir: string
+  outputDir: string,
+  normalized: Record<string, unknown>
 ): Promise<VideoGenerationResult> {
   const maxAttempts = 120;
   const pollInterval = 5000;
@@ -224,11 +303,9 @@ async function pollForVideoCompletion(
     const contentType = retrieveResponse.headers.get("content-type") || "";
 
     if (contentType.includes("video/") || contentType.includes("application/octet-stream")) {
-      // Video is ready - binary response
       const videoBuffer = Buffer.from(await retrieveResponse.arrayBuffer());
       const timestamp = Date.now();
 
-      // Call /video/complete to delete stored media
       try {
         await fetch(`${baseUrl}/video/complete`, {
           method: "POST",
@@ -247,11 +324,10 @@ async function pollForVideoCompletion(
           fileName: `venice-video-${timestamp}.mp4`,
         }],
         model,
-        metadata: { aspect_ratio: aspectRatio, duration },
+        metadata: { aspect_ratio: aspectRatio, duration, normalized, outputDir },
       };
     }
 
-    // JSON status response
     const statusData = await retrieveResponse.json() as Record<string, unknown>;
     const status = statusData.status as string;
 
@@ -275,7 +351,6 @@ async function pollForVideoCompletion(
 
       const timestamp = Date.now();
 
-      // Call /video/complete
       try {
         await fetch(`${baseUrl}/video/complete`, {
           method: "POST",
@@ -294,7 +369,7 @@ async function pollForVideoCompletion(
           fileName: `venice-video-${timestamp}.mp4`,
         }],
         model,
-        metadata: { aspect_ratio: aspectRatio, duration },
+        metadata: { aspect_ratio: aspectRatio, duration, normalized, outputDir },
       };
     }
 

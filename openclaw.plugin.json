@@ -57,7 +57,7 @@
       "defaultVideoDuration": {
         "type": "number",
         "description": "Default video duration in seconds",
-        "default": 5,
+        "default": 6,
         "minimum": 1,
         "maximum": 60
       },
@@ -67,6 +67,24 @@
         "default": 24,
         "minimum": 1,
         "maximum": 60
+      },
+      "defaultNegativePrompt": {
+        "type": "string",
+        "description": "Default negative prompt for image generation"
+      },
+      "defaultStylePreset": {
+        "type": "string",
+        "description": "Default style preset for image generation"
+      },
+      "defaultOutputFormat": {
+        "type": "string",
+        "description": "Default image output format",
+        "enum": ["webp", "png", "jpeg"],
+        "default": "webp"
+      },
+      "defaultVideoNegativePrompt": {
+        "type": "string",
+        "description": "Default negative prompt for video generation"
       },
       "hideWatermark": {
         "type": "boolean",

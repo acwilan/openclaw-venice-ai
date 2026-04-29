@@ -16,12 +16,28 @@ import {
   PROVIDER_ID,
   PROVIDER_NAME,
   DEFAULT_IMAGE_MODEL,
-  VENICE_IMAGE_MODELS,
   VENICE_SUPPORTED_SIZES,
   VENICE_API_BASE_URL,
-  DEFAULT_IMAGE_MIME,
   type VeniceConfig,
 } from "./config.js";
+import {
+  DEFAULT_UPSCALE_MODEL,
+  VENICE_IMAGE_ASPECT_RATIOS,
+  VENICE_IMAGE_MODELS,
+  VENICE_IMAGE_RESOLUTIONS,
+  chooseSupportedAspectRatio,
+  chooseSupportedImageResolution,
+  getAspectRatios,
+  getDefaultAspectRatio,
+  getDefaultImageResolution,
+  getImageEditAspectRatios,
+  getImageModelMetadata,
+  getImageResolutions,
+  inferAspectRatioFromSize,
+  normalizeImageSize,
+  resolveImageEditModel,
+  type VeniceImageResolution,
+} from "./model-metadata.js";
 
 export function registerImageGenerationProvider(api: OpenClawPluginApi, config: VeniceConfig): void {
   const outputDir = config.outputDir
@@ -36,16 +52,16 @@ export function registerImageGenerationProvider(api: OpenClawPluginApi, config: 
     models: [...VENICE_IMAGE_MODELS],
 
     isConfigured: ({ agentDir }) => isProviderApiKeyConfigured({
-        provider: "venice",
-        agentDir,
-      }),
+      provider: "venice",
+      agentDir,
+    }),
 
     capabilities: {
       generate: {
         maxCount: 4,
         supportsSize: true,
         supportsAspectRatio: true,
-        supportsResolution: true,
+        supportsResolution: VENICE_IMAGE_RESOLUTIONS.length > 0,
       },
       edit: {
         enabled: true,
@@ -57,13 +73,14 @@ export function registerImageGenerationProvider(api: OpenClawPluginApi, config: 
       },
       geometry: {
         sizes: [...VENICE_SUPPORTED_SIZES],
+        aspectRatios: [...VENICE_IMAGE_ASPECT_RATIOS],
+        resolutions: [...VENICE_IMAGE_RESOLUTIONS],
       },
     },
 
     async generateImage(req: ImageGenerationRequest): Promise<ImageGenerationResult> {
       const { prompt, model, size, aspectRatio, resolution, count = 1, agentDir, authStore } = req;
 
-      // Access runtime config
       const pluginConfig = req.cfg?.plugins?.entries?.[PROVIDER_ID]?.config as VeniceConfig | undefined;
       const negativePrompt = pluginConfig?.defaultNegativePrompt ?? config.defaultNegativePrompt;
       const stylePreset = pluginConfig?.defaultStylePreset ?? config.defaultStylePreset;
@@ -91,7 +108,6 @@ export function registerImageGenerationProvider(api: OpenClawPluginApi, config: 
       const inputImages = req.inputImages ?? [];
       const isEdit = inputImages.length > 0;
 
-      // Parse edit intent from prompt
       let editIntent: "edit" | "removeBackground" | "upscale" = "edit";
       if (isEdit) {
         const promptLower = prompt.toLowerCase();
@@ -104,8 +120,20 @@ export function registerImageGenerationProvider(api: OpenClawPluginApi, config: 
 
       const images: Array<{ buffer: Buffer; mimeType: string; fileName: string }> = [];
 
+      let actualModel = modelToUse;
+
       if (isEdit) {
-        await handleImageEdit(inputImages[0], prompt, aspectRatio, baseUrl, apiKey, images, editIntent);
+        actualModel = await handleImageEdit(
+          inputImages[0],
+          prompt,
+          modelToUse,
+          size,
+          aspectRatio,
+          baseUrl,
+          apiKey,
+          images,
+          editIntent
+        );
       } else {
         await handleImageGeneration(
           prompt,
@@ -125,7 +153,7 @@ export function registerImageGenerationProvider(api: OpenClawPluginApi, config: 
         );
       }
 
-      return { images, model: modelToUse };
+      return { images, model: actualModel };
     },
   });
 }
@@ -133,12 +161,14 @@ export function registerImageGenerationProvider(api: OpenClawPluginApi, config: 
 async function handleImageEdit(
   firstImage: { buffer?: Buffer; url?: string },
   prompt: string,
+  requestedModel: string,
+  size: string | undefined,
   aspectRatio: string | undefined,
   baseUrl: string,
   apiKey: string,
   images: Array<{ buffer: Buffer; mimeType: string; fileName: string }>,
   editIntent: "edit" | "removeBackground" | "upscale"
-): Promise<void> {
+): Promise<string> {
   if (!firstImage.buffer) {
     throw new Error("Input image must have buffer");
   }
@@ -166,7 +196,10 @@ async function handleImageEdit(
       mimeType: "image/png",
       fileName: `venice-bg-removed-${Date.now()}.png`,
     });
-  } else if (editIntent === "upscale") {
+    return "bria-bg-remover";
+  }
+
+  if (editIntent === "upscale") {
     const response = await fetch(`${baseUrl}/image/upscale`, {
       method: "POST",
       headers: {
@@ -191,40 +224,128 @@ async function handleImageEdit(
       mimeType: "image/png",
       fileName: `venice-upscaled-${Date.now()}.png`,
     });
-  } else {
-    // General image edit
-    const requestBody: Record<string, unknown> = {
-      model: "qwen-edit",
-      prompt,
-      safe_mode: false,
-      image: imageBase64,
-    };
-
-    if (aspectRatio) {
-      requestBody.aspect_ratio = aspectRatio;
-    }
-
-    const response = await fetch(`${baseUrl}/image/edit`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Image edit error: ${response.status} - ${errorText}`);
-    }
-
-    const buffer = Buffer.from(await response.arrayBuffer());
-    images.push({
-      buffer,
-      mimeType: "image/png",
-      fileName: `venice-edit-${Date.now()}.png`,
-    });
+    return DEFAULT_UPSCALE_MODEL;
   }
+
+  const { model: editModel, body: requestBody } = buildImageEditRequestBody({
+    prompt,
+    requestedModel,
+    size,
+    aspectRatio,
+    imageBase64,
+  });
+
+  const response = await fetch(`${baseUrl}/image/edit`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Image edit error: ${response.status} - ${errorText}`);
+  }
+
+  const buffer = Buffer.from(await response.arrayBuffer());
+  images.push({
+    buffer,
+    mimeType: "image/png",
+    fileName: `venice-edit-${Date.now()}.png`,
+  });
+  return editModel;
+}
+
+export function buildImageEditRequestBody(args: {
+  prompt: string;
+  requestedModel: string;
+  size?: string;
+  aspectRatio?: string;
+  imageBase64: string;
+}): { model: string; body: Record<string, unknown> } {
+  const editModel = resolveImageEditModel(args.requestedModel);
+  const supportedAspectRatios = getImageEditAspectRatios(editModel);
+  const aspectRatioToUse = chooseSupportedAspectRatio(
+    args.aspectRatio ?? inferAspectRatioFromSize(args.size),
+    supportedAspectRatios,
+    supportedAspectRatios.includes("auto") ? "auto" : getDefaultAspectRatio({ aspectRatios: supportedAspectRatios })
+  );
+
+  const body: Record<string, unknown> = {
+    model: editModel,
+    prompt: args.prompt,
+    safe_mode: false,
+    image: args.imageBase64,
+  };
+
+  if (aspectRatioToUse) {
+    body.aspect_ratio = aspectRatioToUse;
+  }
+
+  return { model: editModel, body };
+}
+
+export function buildImageGenerationRequestBody(args: {
+  prompt: string;
+  modelToUse: string;
+  size?: string;
+  aspectRatio?: string;
+  resolution?: VeniceImageResolution;
+  config: VeniceConfig;
+  negativePrompt?: string;
+  stylePreset?: string;
+  outputFormat: string;
+  seed?: number;
+}): Record<string, unknown> {
+  const modelConstraints = getImageModelMetadata(args.modelToUse)?.model_spec?.constraints;
+  const supportedAspectRatios = getAspectRatios(modelConstraints);
+  const supportedResolutions = getImageResolutions(modelConstraints);
+  const aspectRatioToUse = chooseSupportedAspectRatio(
+    args.aspectRatio ?? inferAspectRatioFromSize(args.size),
+    supportedAspectRatios,
+    getDefaultAspectRatio(modelConstraints)
+  );
+  const resolutionToUse = chooseSupportedImageResolution(
+    args.resolution,
+    supportedResolutions,
+    getDefaultImageResolution(modelConstraints)
+  );
+  const divisor = modelConstraints?.widthHeightDivisor ?? 1;
+
+  const requestBody: Record<string, unknown> = {
+    model: args.modelToUse,
+    prompt: args.prompt,
+    seed: args.seed ?? Math.floor(Math.random() * 999999999),
+    cfg_scale: args.config.defaultImageCfgScale ?? 7.0,
+    steps: args.config.defaultImageSteps ?? 30,
+    format: args.outputFormat === "jpeg" ? "jpg" : args.outputFormat,
+    embed_exif_metadata: false,
+    hide_watermark: args.config.hideWatermark ?? false,
+    safe_mode: args.config.safeMode ?? false,
+    return_binary: true,
+  };
+
+  if (aspectRatioToUse && supportedAspectRatios.length > 0) {
+    requestBody.aspect_ratio = aspectRatioToUse;
+    if (resolutionToUse && supportedResolutions.length > 0) {
+      requestBody.resolution = resolutionToUse;
+    }
+  } else {
+    const normalizedSize = normalizeImageSize(args.size, divisor);
+    requestBody.width = normalizedSize.width;
+    requestBody.height = normalizedSize.height;
+  }
+
+  if (args.negativePrompt) {
+    requestBody.negative_prompt = args.negativePrompt;
+  }
+  if (args.stylePreset) {
+    requestBody.style_preset = args.stylePreset;
+  }
+
+  return requestBody;
 }
 
 async function handleImageGeneration(
@@ -232,7 +353,7 @@ async function handleImageGeneration(
   modelToUse: string,
   size: string | undefined,
   aspectRatio: string | undefined,
-  resolution: "1K" | "2K" | "4K" | undefined,
+  resolution: VeniceImageResolution | undefined,
   count: number,
   config: VeniceConfig,
   negativePrompt: string | undefined,
@@ -244,45 +365,17 @@ async function handleImageGeneration(
   images: Array<{ buffer: Buffer; mimeType: string; fileName: string }>
 ): Promise<void> {
   for (let i = 0; i < count; i++) {
-    const requestBody: Record<string, unknown> = {
-      model: modelToUse,
+    const requestBody = buildImageGenerationRequestBody({
       prompt,
-      seed: Math.floor(Math.random() * 999999999),
-      cfg_scale: config.defaultImageCfgScale ?? 7.0,
-      steps: config.defaultImageSteps ?? 30,
-      format: outputFormat === "jpeg" ? "jpg" : outputFormat,
-      embed_exif_metadata: false,
-      hide_watermark: config.hideWatermark ?? false,
-      safe_mode: config.safeMode ?? false,
-      return_binary: true,
-    };
-
-    // Sizing
-    if (aspectRatio) {
-      requestBody.aspect_ratio = aspectRatio;
-      if (resolution) {
-        requestBody.resolution = resolution;
-      }
-    } else if (size) {
-      const [w, h] = size.split("x").map(Number);
-      if (w && h) {
-        requestBody.width = w;
-        requestBody.height = h;
-      } else {
-        requestBody.width = 1024;
-        requestBody.height = 1024;
-      }
-    } else {
-      requestBody.width = 1024;
-      requestBody.height = 1024;
-    }
-
-    if (negativePrompt) {
-      requestBody.negative_prompt = negativePrompt;
-    }
-    if (stylePreset) {
-      requestBody.style_preset = stylePreset;
-    }
+      modelToUse,
+      size,
+      aspectRatio,
+      resolution,
+      config,
+      negativePrompt,
+      stylePreset,
+      outputFormat,
+    });
 
     const response = await fetch(`${baseUrl}/image/generate`, {
       method: "POST",
