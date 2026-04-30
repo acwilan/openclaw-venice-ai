@@ -189,7 +189,7 @@ export function buildVideoQueueRequestBody(args: {
   requestedModel: string;
   size?: string;
   durationSeconds?: number;
-  inputImages?: Array<{ url?: string; buffer?: Buffer }>;
+  inputImages?: Array<{ url?: string; buffer?: Buffer; mimeType?: string }>;
   aspectRatio?: string;
   resolution?: string;
   audio?: boolean;
@@ -239,7 +239,8 @@ export function buildVideoQueueRequestBody(args: {
     if (firstImage.url) {
       requestBody.image_url = firstImage.url;
     } else if (firstImage.buffer) {
-      requestBody.image = firstImage.buffer.toString("base64");
+      const mimeType = firstImage.mimeType || "image/png";
+      requestBody.image_url = `data:${mimeType};base64,${firstImage.buffer.toString("base64")}`;
     }
   }
 

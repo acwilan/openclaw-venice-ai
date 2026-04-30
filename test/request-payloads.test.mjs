@@ -122,6 +122,19 @@ test("video queue payload switches to image-to-video sibling and normalizes opti
   assert.equal(normalized.normalizedDuration, 6);
 });
 
+test("video queue payload uses data URL image_url for buffered image input", () => {
+  const { body } = buildVideoQueueRequestBody({
+    prompt: "animate this scene",
+    requestedModel: "ltx-2-fast-text-to-video",
+    inputImages: [{ buffer: Buffer.from("hello"), mimeType: "image/jpeg" }],
+    config: videoConfig,
+  });
+
+  assert.equal(body.model, "ltx-2-fast-image-to-video");
+  assert.equal(body.image_url, "data:image/jpeg;base64,aGVsbG8=");
+  assert.equal(body.image, undefined);
+});
+
 test("video queue payload keeps supported audio and smaller duration fallback", () => {
   const { body } = buildVideoQueueRequestBody({
     prompt: "ocean waves",
