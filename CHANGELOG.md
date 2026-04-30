@@ -4,8 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-04-29
+
 ### Added
-- Metadata-driven Venice model catalog loader from generated Venice model snapshots
+- OpenClaw embedding support for `image_generate` tool — generated images now display inline in chat responses
+
+### Fixed
+- Provider metadata now correctly registers with OpenClaw's image generation system for seamless tool integration
+
+## [2.2.0] - 2026-04-28
+
+### Changed
+- **Major refactor**: Split monolithic 718-line `index.ts` into modular structure
 - `npm run refresh-model-catalogs` script to fetch fresh `image`, `video`, `inpaint`, and `upscale` catalogs from Venice `/models`
 - `npm run check-model-catalogs` and `npm run check-model-catalogs:drift` for shape validation and live drift detection
 - Initial unit tests for metadata-driven routing and normalization helpers

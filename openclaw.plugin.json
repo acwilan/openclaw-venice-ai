@@ -2,7 +2,7 @@
   "id": "venice-media",
   "name": "Venice.ai Media Generation",
   "description": "Image and video generation using Venice.ai API",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "author": "Andres Rovira",
   "authorUrl": "https://github.com/acwilan",
   "license": "MIT",
