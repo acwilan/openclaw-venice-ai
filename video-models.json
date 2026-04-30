@@ -918,7 +918,8 @@
           "audio": true,
           "audio_configurable": false,
           "audio_input": false,
-          "video_input": false
+          "video_input": false,
+          "prompt_character_limit": 4096
         },
         "model_sets": [
           "audio",
@@ -954,7 +955,8 @@
           "audio": true,
           "audio_configurable": false,
           "audio_input": false,
-          "video_input": false
+          "video_input": false,
+          "prompt_character_limit": 4096
         },
         "model_sets": [
           "audio",
@@ -999,7 +1001,8 @@
           "audio": false,
           "audio_configurable": false,
           "audio_input": false,
-          "video_input": false
+          "video_input": false,
+          "prompt_character_limit": 4096
         },
         "model_sets": [
           "photorealistic"
@@ -1040,7 +1043,8 @@
           "audio": true,
           "audio_configurable": false,
           "audio_input": false,
-          "video_input": false
+          "video_input": false,
+          "prompt_character_limit": 4096
         },
         "model_sets": [
           "audio",
@@ -1075,7 +1079,8 @@
           "audio": true,
           "audio_configurable": false,
           "audio_input": false,
-          "video_input": false
+          "video_input": false,
+          "prompt_character_limit": 4096
         },
         "model_sets": [
           "audio",
@@ -1118,7 +1123,8 @@
           "audio": false,
           "audio_configurable": false,
           "audio_input": false,
-          "video_input": false
+          "video_input": false,
+          "prompt_character_limit": 4096
         },
         "model_sets": [
           "photorealistic"
@@ -1151,7 +1157,8 @@
           "audio": true,
           "audio_configurable": false,
           "audio_input": false,
-          "video_input": true
+          "video_input": true,
+          "prompt_character_limit": 4096
         },
         "model_sets": [
           "audio",

@@ -23,7 +23,7 @@
             "4:5"
           ],
           "promptCharacterLimit": 5000,
-          "combineImages": false
+          "combineImages": true
         },
         "name": "FireRed Image Edit 1.1",
         "offline": false,
