@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.3.1] - 2026-04-30
+
+### Fixed
+- Image-to-video requests with uploaded image buffers now send Venice-compatible `image_url` data URLs instead of the unsupported `image` payload key.
+
 ## [2.3.0] - 2026-04-29
 
 ### Added
