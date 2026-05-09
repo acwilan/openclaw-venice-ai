@@ -32,4 +32,5 @@ jobs:
         run: npm test
 
       - name: Check model catalog drift
-        run: npm run check-model-catalogs:drift
+        run: |
+          npm run check-model-catalogs:drift || echo "::warning::Model catalog drift detected; refresh catalogs when convenient."

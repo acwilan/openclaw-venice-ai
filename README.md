@@ -86,7 +86,7 @@ Check for remote drift against the live Venice `/models` endpoint:
 npm run check-model-catalogs:drift
 ```
 
-CI runs both the local shape check and the live drift check on pull requests and pushes to `main`.
+CI runs both the local shape check and the live drift check on pull requests and pushes to `main`; the live drift check is advisory and reports a warning instead of failing the workflow.
 
 This uses the public Venice `/models` endpoint. If Venice ever starts requiring auth for model listing, set `VENICE_API_KEY` before running the scripts.
 

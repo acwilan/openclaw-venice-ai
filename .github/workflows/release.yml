@@ -28,6 +28,10 @@ jobs:
       - name: Check model catalogs
         run: npm run check-model-catalogs
 
+      - name: Check model catalog drift
+        run: |
+          npm run check-model-catalogs:drift || echo "::warning::Model catalog drift detected; refresh catalogs when convenient."
+
       - name: Type check
         run: npm run typecheck
 
