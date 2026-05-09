@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.3.2] - 2026-05-08
+
+### Fixed
+- Declare `venice-media` image and video generation provider contracts so OpenClaw can resolve the plugin provider at runtime.
+- Extend Venice video polling timeout from 10 minutes to 30 minutes for longer-running queued video jobs.
+
 ## [2.3.1] - 2026-04-30
 
 ### Fixed
