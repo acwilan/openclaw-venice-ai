@@ -97,5 +97,13 @@
         "default": false
       }
     }
+  },
+  "contracts": {
+    "imageGenerationProviders": [
+      "venice-media"
+    ],
+    "videoGenerationProviders": [
+      "venice-media"
+    ]
   }
 }

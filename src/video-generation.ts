@@ -282,7 +282,9 @@ async function pollForVideoCompletion(
   outputDir: string,
   normalized: Record<string, unknown>
 ): Promise<VideoGenerationResult> {
-  const maxAttempts = 120;
+  // Venice video queues can exceed 10 minutes for busy/high-end models.
+  // Poll for up to 30 minutes before surfacing a timeout.
+  const maxAttempts = 360;
   const pollInterval = 5000;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
