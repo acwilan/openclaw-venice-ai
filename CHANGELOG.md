@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.3.3] - 2026-05-11
+
+### Fixed
+- **Grok Imagine Private video models**: Capture `download_url` from `/video/queue` response and fetch completed videos from the pre-signed URL. Venice's private models return `{"status": "COMPLETED"}` (uppercase) without inline video data, so the plugin now matches status case-insensitively and downloads via `download_url`.
+- **Video retrieve error reporting**: After 3 consecutive failed `/video/retrieve` responses, the plugin now throws with the full HTTP status code and error body instead of silently retrying for 30 minutes.
+
 ## [2.3.2] - 2026-05-08
 
 ### Fixed

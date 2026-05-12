@@ -165,6 +165,7 @@ export function registerVideoGenerationProvider(api: OpenClawPluginApi, config: 
 
       const queueData = await queueResponse.json() as Record<string, unknown>;
       const queueId = queueData.queue_id as string;
+      const downloadUrl = queueData.download_url as string | undefined;
 
       if (!queueId) {
         throw new Error("No queue ID returned from Venice.ai API");
@@ -178,7 +179,8 @@ export function registerVideoGenerationProvider(api: OpenClawPluginApi, config: 
         normalized.normalizedAspectRatio as string | undefined,
         normalized.normalizedDuration as number,
         outputDir,
-        normalized
+        normalized,
+        downloadUrl
       );
     },
   });
@@ -280,12 +282,14 @@ async function pollForVideoCompletion(
   aspectRatio: string | undefined,
   duration: number,
   outputDir: string,
-  normalized: Record<string, unknown>
+  normalized: Record<string, unknown>,
+  downloadUrl?: string
 ): Promise<VideoGenerationResult> {
   // Venice video queues can exceed 10 minutes for busy/high-end models.
   // Poll for up to 30 minutes before surfacing a timeout.
   const maxAttempts = 360;
   const pollInterval = 5000;
+  let consecutiveErrors = 0;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     await new Promise((resolve) => setTimeout(resolve, pollInterval));
@@ -300,8 +304,16 @@ async function pollForVideoCompletion(
     });
 
     if (!retrieveResponse.ok) {
+      const errorText = await retrieveResponse.text();
+      consecutiveErrors++;
+      if (consecutiveErrors >= 3) {
+        throw new Error(
+          `Venice.ai video retrieve error (attempt ${attempt + 1}): ${retrieveResponse.status} ${retrieveResponse.statusText} — ${errorText}`
+        );
+      }
       continue;
     }
+    consecutiveErrors = 0;
 
     const contentType = retrieveResponse.headers.get("content-type") || "";
 
@@ -332,9 +344,31 @@ async function pollForVideoCompletion(
     }
 
     const statusData = await retrieveResponse.json() as Record<string, unknown>;
-    const status = statusData.status as string;
+    const status = (statusData.status as string)?.toLowerCase();
 
     if (status === "completed") {
+      // For private models that returned download_url at queue time,
+      // /video/retrieve returns {"status": "COMPLETED"} with no inline video data.
+      // Fetch the video from the pre-signed URL.
+      if (downloadUrl) {
+        const videoResponse = await fetch(downloadUrl);
+        if (!videoResponse.ok) {
+          throw new Error(
+            `Failed to download video from download_url: ${videoResponse.status} ${videoResponse.statusText}`
+          );
+        }
+        const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
+        const timestamp = Date.now();
+        return {
+          videos: [{
+            buffer: videoBuffer,
+            mimeType: DEFAULT_VIDEO_MIME,
+            fileName: `venice-video-${timestamp}.mp4`,
+          }],
+          model,
+          metadata: { aspect_ratio: aspectRatio, duration, normalized, outputDir },
+        };
+      }
       const videoData = statusData.video as string;
       const videoUrl = statusData.video_url as string;
 
