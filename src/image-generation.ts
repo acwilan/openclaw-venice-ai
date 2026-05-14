@@ -85,9 +85,14 @@ export function registerImageGenerationProvider(api: OpenClawPluginApi, config: 
       const { prompt, model, size, aspectRatio, resolution, count = 1, agentDir, authStore } = req;
 
       const pluginConfig = req.cfg?.plugins?.entries?.[PROVIDER_ID]?.config as VeniceConfig | undefined;
-      const negativePrompt = pluginConfig?.defaultNegativePrompt ?? config.defaultNegativePrompt;
-      const stylePreset = pluginConfig?.defaultStylePreset ?? config.defaultStylePreset;
-      const outputFormat = (pluginConfig?.defaultOutputFormat ?? config.defaultOutputFormat) ?? "webp";
+      const effectiveConfig = { ...config, ...pluginConfig };
+      const negativePrompt = effectiveConfig.defaultNegativePrompt;
+      const stylePreset = effectiveConfig.defaultStylePreset;
+      const outputFormat = effectiveConfig.defaultOutputFormat ?? "webp";
+      const defaultImageEditEnabled = effectiveConfig.defaultImageEditEnabled === true;
+      const defaultImageEditPrompt = defaultImageEditEnabled
+        ? effectiveConfig.defaultImageEditPrompt?.trim()
+        : undefined;
 
       const auth = await resolveApiKeyForProvider({
         provider: "venice",
@@ -103,8 +108,8 @@ export function registerImageGenerationProvider(api: OpenClawPluginApi, config: 
         );
       }
 
-      const baseUrl = config.baseUrl ?? VENICE_API_BASE_URL;
-      const modelToUse = model || (pluginConfig?.defaultImageModel ?? config.defaultImageModel ?? DEFAULT_IMAGE_MODEL);
+      const baseUrl = effectiveConfig.baseUrl ?? VENICE_API_BASE_URL;
+      const modelToUse = model || (effectiveConfig.defaultImageModel ?? DEFAULT_IMAGE_MODEL);
 
       await mkdir(outputDir, { recursive: true });
 
@@ -113,6 +118,10 @@ export function registerImageGenerationProvider(api: OpenClawPluginApi, config: 
 
       let editIntent: "edit" | "removeBackground" | "upscale" = "edit";
       if (isEdit) {
+        if (defaultImageEditEnabled && !defaultImageEditPrompt) {
+          throw new Error("defaultImageEditEnabled is true, but defaultImageEditPrompt is not configured");
+        }
+
         const promptLower = prompt.toLowerCase();
         if (promptLower.includes("remove background") || promptLower.includes("remove the background")) {
           editIntent = "removeBackground";
@@ -135,7 +144,9 @@ export function registerImageGenerationProvider(api: OpenClawPluginApi, config: 
           baseUrl,
           apiKey,
           images,
-          editIntent
+          editIntent,
+          effectiveConfig,
+          defaultImageEditPrompt
         );
       } else {
         await handleImageGeneration(
@@ -145,7 +156,7 @@ export function registerImageGenerationProvider(api: OpenClawPluginApi, config: 
           aspectRatio,
           resolution,
           count,
-          config,
+          effectiveConfig,
           negativePrompt,
           stylePreset,
           outputFormat,
@@ -179,7 +190,9 @@ async function handleImageEdit(
   baseUrl: string,
   apiKey: string,
   images: Array<{ buffer: Buffer; mimeType: string; fileName: string }>,
-  editIntent: "edit" | "removeBackground" | "upscale"
+  editIntent: "edit" | "removeBackground" | "upscale",
+  config: VeniceConfig,
+  defaultImageEditPrompt?: string
 ): Promise<string> {
   if (!firstImage.buffer) {
     throw new Error("Input image must have buffer");
@@ -240,11 +253,12 @@ async function handleImageEdit(
   }
 
   const { model: editModel, body: requestBody } = buildImageEditRequestBody({
-    prompt,
+    prompt: defaultImageEditPrompt ?? prompt,
     requestedModel,
     size,
     aspectRatio,
     imageBase64,
+    safeMode: config.safeMode,
   });
 
   const response = await fetch(`${baseUrl}/image/edit`, {
@@ -276,6 +290,7 @@ export function buildImageEditRequestBody(args: {
   size?: string;
   aspectRatio?: string;
   imageBase64: string;
+  safeMode?: boolean;
 }): { model: string; body: Record<string, unknown> } {
   const editModel = resolveImageEditModel(args.requestedModel);
   const supportedAspectRatios = getImageEditAspectRatios(editModel);
@@ -288,7 +303,7 @@ export function buildImageEditRequestBody(args: {
   const body: Record<string, unknown> = {
     model: editModel,
     prompt: args.prompt,
-    safe_mode: false,
+    safe_mode: args.safeMode ?? false,
     image: args.imageBase64,
   };
 

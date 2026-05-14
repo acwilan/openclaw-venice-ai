@@ -80,6 +80,9 @@ export interface VeniceConfig extends OpenClawConfig {
   defaultNegativePrompt?: string;
   defaultStylePreset?: string;
   defaultOutputFormat?: "webp" | "png" | "jpeg";
+  // Image edit options
+  defaultImageEditEnabled?: boolean;
+  defaultImageEditPrompt?: string;
   // Video generation options
   defaultVideoNegativePrompt?: string;
 }

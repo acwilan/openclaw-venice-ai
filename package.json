@@ -1,11 +1,13 @@
 {
   "name": "openclaw-venice-media",
-  "version": "2.3.3",
+  "version": "2.4.0",
   "description": "Venice.ai image and video generation for OpenClaw",
   "type": "module",
   "main": "dist/index.js",
   "openclaw": {
-    "extensions": ["./dist/index.js"],
+    "extensions": [
+      "./dist/index.js"
+    ],
     "compat": {
       "pluginApi": ">=2026.4.0",
       "minGatewayVersion": "2026.4.0"

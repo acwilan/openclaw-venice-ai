@@ -107,6 +107,8 @@ Add to your `~/.openclaw/openclaw.json`:
           "defaultNegativePrompt": "blurry, low quality",
           "defaultStylePreset": "3D Model",
           "defaultOutputFormat": "webp",
+          "defaultImageEditEnabled": false,
+          "defaultImageEditPrompt": "Convert the input image into a warm watercolor illustration while preserving the subject, composition, and key details.",
           "defaultVideoNegativePrompt": "blurry, shaky, low quality",
           "hideWatermark": false,
           "safeMode": false,
@@ -142,6 +144,8 @@ Add to your `~/.openclaw/openclaw.json`:
 | `defaultNegativePrompt` | string | — | Default negative prompt for images |
 | `defaultStylePreset` | string | — | Default image style preset |
 | `defaultOutputFormat` | string | `webp` | Output format: `webp`, `png`, `jpeg` |
+| `defaultImageEditEnabled` | boolean | `false` | Replace image edit prompts with `defaultImageEditPrompt` |
+| `defaultImageEditPrompt` | string | — | Default conversion prompt for image edit flows |
 | `defaultVideoNegativePrompt` | string | — | Default negative prompt for videos |
 | `hideWatermark` | boolean | `false` | Hide Venice.ai watermark |
 | `safeMode` | boolean | `false` | Enable content filtering |
@@ -159,6 +163,25 @@ With specific options:
 
 ```text
 Generate a 512x512 image of a cat in 3D Model style
+```
+
+### Default Image Edits
+
+Enable this when you want a dedicated conversion agent, e.g. an anime, watercolor, charcoal, or storybook-style bot. When an image edit request reaches Venice's `/image/edit` endpoint, the plugin sends `defaultImageEditPrompt` instead of the user's prompt. Background removal and upscale requests still route to their specialized Venice endpoints.
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "venice-media": {
+        "config": {
+          "defaultImageEditEnabled": true,
+          "defaultImageEditPrompt": "Convert the input photo into a hand-painted watercolor portrait. Preserve the person's identity, pose, composition, and important details."
+        }
+      }
+    }
+  }
+}
 ```
 
 ### Video Generation

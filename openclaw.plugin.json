@@ -2,7 +2,7 @@
   "id": "venice-media",
   "name": "Venice.ai Media Generation",
   "description": "Image and video generation using Venice.ai API",
-  "version": "2.3.3",
+  "version": "2.4.0",
   "author": "Andres Rovira",
   "authorUrl": "https://github.com/acwilan",
   "license": "MIT",
@@ -50,9 +50,9 @@
       "defaultImageCfgScale": {
         "type": "number",
         "description": "Guidance scale for images (higher = more adherence to prompt)",
-        "default": 7.0,
-        "minimum": 1.0,
-        "maximum": 20.0
+        "default": 7,
+        "minimum": 1,
+        "maximum": 20
       },
       "defaultVideoDuration": {
         "type": "number",
@@ -79,8 +79,21 @@
       "defaultOutputFormat": {
         "type": "string",
         "description": "Default image output format",
-        "enum": ["webp", "png", "jpeg"],
+        "enum": [
+          "webp",
+          "png",
+          "jpeg"
+        ],
         "default": "webp"
+      },
+      "defaultImageEditEnabled": {
+        "type": "boolean",
+        "description": "When true, image edit requests use defaultImageEditPrompt instead of the user's prompt for the Venice image edit endpoint",
+        "default": false
+      },
+      "defaultImageEditPrompt": {
+        "type": "string",
+        "description": "Default prompt for image edit conversion flows, e.g. convert the input image into watercolor while preserving composition"
       },
       "defaultVideoNegativePrompt": {
         "type": "string",

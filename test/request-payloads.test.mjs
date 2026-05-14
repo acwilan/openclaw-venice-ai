@@ -96,6 +96,18 @@ test("image edit routing resolves sibling edit model and inferred aspect ratio",
   assert.equal(body.image, "abc123");
 });
 
+test("image edit request body can use a configured conversion prompt", () => {
+  const { body } = buildImageEditRequestBody({
+    prompt: "convert this photo into soft watercolor, preserving the subject and composition",
+    requestedModel: "gpt-image-2",
+    imageBase64: "abc123",
+    safeMode: true,
+  });
+
+  assert.equal(body.prompt, "convert this photo into soft watercolor, preserving the subject and composition");
+  assert.equal(body.safe_mode, true);
+});
+
 test("video queue payload switches to image-to-video sibling and normalizes options", () => {
   const { model, body, normalized } = buildVideoQueueRequestBody({
     prompt: "animate this scene",

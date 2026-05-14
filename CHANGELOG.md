@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-05-14
+
+### Added
+- **Default image edits**: Add `defaultImageEditEnabled` and `defaultImageEditPrompt` plugin configuration so dedicated agents can convert uploaded photos or pictures into a configured style, such as anime, watercolor, charcoal, or storybook illustration. When enabled, Venice `/image/edit` requests use the configured conversion prompt instead of the user prompt.
+
+### Fixed
+- Image edit requests now honor the plugin `safeMode` setting and use the effective runtime plugin configuration consistently for image defaults.
+
 ## [2.3.3] - 2026-05-11
 
 ### Fixed
